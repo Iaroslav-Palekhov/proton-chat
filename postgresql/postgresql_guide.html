@@ -1,0 +1,379 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.root{font-family:var(--font-sans);padding:24px 0;max-width:780px}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:20px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.logo{width:36px;height:36px;border-radius:10px;background:#185FA5;display:flex;align-items:center;justify-content:center}
+.logo svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round}
+.app-title{font-size:16px;font-weight:500;color:var(--color-text-primary)}
+.app-sub{font-size:12px;color:var(--color-text-tertiary);margin-top:1px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px}
+.tab{padding:7px 16px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:13px;font-family:var(--font-sans);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.tab.on{background:#E6F1FB;color:#0C447C;border-color:#85B7EB;font-weight:500}
+.sec{display:none}.sec.on{display:block}
+.sec-title{font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+.sec-desc{font-size:14px;color:var(--color-text-secondary);margin-bottom:20px;line-height:1.6}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:18px 20px;margin-bottom:12px}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.step-num{width:24px;height:24px;border-radius:50%;background:#E6F1FB;color:#185FA5;font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-title{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.card p{font-size:14px;color:var(--color-text-secondary);line-height:1.65;margin-bottom:10px}
+.card p:last-child{margin-bottom:0}
+pre{background:var(--color-background-tertiary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:13px 15px;font-family:var(--font-mono);font-size:12.5px;color:var(--color-text-primary);overflow-x:auto;line-height:1.65;margin:8px 0}
+pre:last-child{margin-bottom:0}
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;margin:0 4px 6px 0}
+.b-blue{background:#E6F1FB;color:#0C447C}
+.b-green{background:#EAF3DE;color:#27500A}
+.b-red{background:#FCEBEB;color:#791F1F}
+.b-amber{background:#FAEEDA;color:#633806}
+.b-gray{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.alert{border-radius:0;border-left:3px solid;padding:11px 14px;font-size:13px;line-height:1.6;margin:10px 0}
+.alert-warn{background:#FAEEDA;border-color:#BA7517;color:#633806}
+.alert-ok{background:#EAF3DE;border-color:#639922;color:#27500A}
+.alert-info{background:#E6F1FB;border-color:#378ADD;color:#0C447C}
+.inline-code{font-family:var(--font-mono);font-size:12px;background:var(--color-background-tertiary);border:0.5px solid var(--color-border-tertiary);border-radius:4px;padding:1px 5px;color:var(--color-text-primary)}
+.divider{height:0.5px;background:var(--color-border-tertiary);margin:18px 0}
+.os-switcher{display:flex;gap:6px;margin-bottom:16px}
+.os-btn{padding:5px 14px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:12px;cursor:pointer;font-family:var(--font-sans);transition:all .15s}
+.os-btn.on{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-primary);font-weight:500}
+.os-pane{display:none}.os-pane.on{display:block}
+.path-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.path-row:last-child{border-bottom:none}
+.path-label{font-size:12px;color:var(--color-text-tertiary);width:70px;flex-shrink:0;padding-top:1px}
+.path-val{font-family:var(--font-mono);font-size:12px;color:var(--color-text-primary);word-break:break-all}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:540px){.grid2{grid-template-columns:1fr}}
+.tool-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px 16px}
+.tool-name{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+.tool-desc{font-size:12px;color:var(--color-text-secondary);line-height:1.5;margin-bottom:8px}
+</style>
+
+<div class="root">
+
+<div class="topbar">
+  <div class="logo">
+    <svg viewBox="0 0 20 20"><ellipse cx="10" cy="6" rx="7" ry="3"/><path d="M3 6v4c0 1.66 3.13 3 7 3s7-1.34 7-3V6"/><path d="M3 10v4c0 1.66 3.13 3 7 3s7-1.34 7-3v-4"/></svg>
+  </div>
+  <div>
+    <div class="app-title">PostgreSQL — руководство администратора</div>
+    <div class="app-sub">Linux · Windows · удалённый доступ</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="go('start',this)">Запуск</button>
+  <button class="tab" onclick="go('connect',this)">Подключение</button>
+  <button class="tab" onclick="go('db',this)">Базы данных</button>
+  <button class="tab" onclick="go('users',this)">Пользователи</button>
+  <button class="tab" onclick="go('remote',this)">Удалённый доступ</button>
+  <button class="tab" onclick="go('windows',this)">Windows-сервер</button>
+</div>
+
+<!-- ЗАПУСК -->
+<div id="start" class="sec on">
+  <div class="sec-title">Запуск и управление службой</div>
+  <div class="sec-desc">Основные команды для управления PostgreSQL на сервере.</div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">Управление службой (Linux)</div></div>
+    <pre>sudo systemctl start postgresql
+sudo systemctl stop postgresql
+sudo systemctl restart postgresql
+sudo systemctl status postgresql
+sudo systemctl enable postgresql   # автозапуск</pre>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">Управление службой (Windows)</div></div>
+    <p>Через PowerShell (от администратора):</p>
+    <pre>Start-Service postgresql-x64-16
+Stop-Service  postgresql-x64-16
+Restart-Service postgresql-x64-16
+Get-Service   postgresql-x64-16</pre>
+    <p>Или через <span class="inline-code">services.msc</span> — найдите службу <span class="inline-code">postgresql-x64-16</span>.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">Расположение файлов</div></div>
+    <div class="os-switcher">
+      <button class="os-btn on" onclick="os('linux',this)">Linux</button>
+      <button class="os-btn" onclick="os('win-files',this)">Windows</button>
+    </div>
+    <div id="linux" class="os-pane on">
+      <div class="path-row"><div class="path-label">Конфиг</div><div class="path-val">/etc/postgresql/16/main/postgresql.conf</div></div>
+      <div class="path-row"><div class="path-label">Доступ</div><div class="path-val">/etc/postgresql/16/main/pg_hba.conf</div></div>
+      <div class="path-row"><div class="path-label">Данные</div><div class="path-val">/var/lib/postgresql/16/main/</div></div>
+      <div class="path-row"><div class="path-label">Логи</div><div class="path-val">/var/log/postgresql/</div></div>
+    </div>
+    <div id="win-files" class="os-pane">
+      <div class="path-row"><div class="path-label">Конфиг</div><div class="path-val">C:\Program Files\PostgreSQL\16\data\postgresql.conf</div></div>
+      <div class="path-row"><div class="path-label">Доступ</div><div class="path-val">C:\Program Files\PostgreSQL\16\data\pg_hba.conf</div></div>
+      <div class="path-row"><div class="path-label">Данные</div><div class="path-val">C:\Program Files\PostgreSQL\16\data\</div></div>
+      <div class="path-row"><div class="path-label">Логи</div><div class="path-val">C:\Program Files\PostgreSQL\16\data\log\</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ПОДКЛЮЧЕНИЕ -->
+<div id="connect" class="sec">
+  <div class="sec-title">Подключение к PostgreSQL</div>
+  <div class="sec-desc">Как войти в psql и основные команды внутри.</div>
+
+  <div class="card">
+    <div class="card-head"><span class="badge b-blue">Linux — локально</span></div>
+    <p>PostgreSQL создаёт системного пользователя <span class="inline-code">postgres</span>. Войдите от его имени:</p>
+    <pre>sudo -u postgres psql
+sudo -u postgres psql -d mydb     # сразу к нужной БД</pre>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="badge b-blue">TCP — логин + пароль</span></div>
+    <pre>psql -h localhost -p 5432 -U myuser -d mydb
+psql -h 192.168.1.10 -p 5432 -U myuser -d mydb   # удалённо</pre>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="badge b-gray">Команды внутри psql</span></div>
+    <pre>\l           список баз данных
+\c mydb      переключиться на БД
+\dt          таблицы текущей БД
+\du          список пользователей
+\conninfo    текущее подключение
+\q           выйти
+\?           справка</pre>
+  </div>
+</div>
+
+<!-- БАЗЫ ДАННЫХ -->
+<div id="db" class="sec">
+  <div class="sec-title">Работа с базами данных</div>
+  <div class="sec-desc">Создание, просмотр, удаление и резервное копирование.</div>
+
+  <div class="card">
+    <div class="card-head"><span class="badge b-green">Создание</span></div>
+    <pre>-- войдите: sudo -u postgres psql
+CREATE DATABASE mydb;
+
+-- с кодировкой и владельцем:
+CREATE DATABASE mydb
+  OWNER myuser
+  ENCODING 'UTF8'
+  LC_COLLATE 'ru_RU.UTF-8'
+  LC_CTYPE  'ru_RU.UTF-8'
+  TEMPLATE template0;</pre>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="badge b-blue">Просмотр</span></div>
+    <pre>\l
+SELECT current_database();
+SELECT datname FROM pg_database;</pre>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="badge b-red">Удаление</span></div>
+    <div class="alert alert-warn">Нельзя удалить БД, к которой вы подключены. Сначала: <span class="inline-code">\c postgres</span></div>
+    <pre>DROP DATABASE mydb;
+DROP DATABASE IF EXISTS mydb;</pre>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="badge b-gray">Бэкап и восстановление</span></div>
+    <pre># бэкап:
+pg_dump -U postgres mydb > mydb.sql
+
+# восстановление:
+psql -U postgres mydb < mydb.sql
+
+# бинарный формат (быстрее):
+pg_dump -Fc -U postgres mydb > mydb.dump
+pg_restore -U postgres -d mydb mydb.dump</pre>
+  </div>
+</div>
+
+<!-- ПОЛЬЗОВАТЕЛИ -->
+<div id="users" class="sec">
+  <div class="sec-title">Пользователи и права</div>
+  <div class="sec-desc">Создание ролей, назначение привилегий, смена паролей.</div>
+
+  <div class="card">
+    <div class="card-head"><span class="badge b-green">Создание</span></div>
+    <pre>CREATE USER myuser WITH PASSWORD 'secret123';
+
+-- с правом создавать БД:
+CREATE USER myuser WITH PASSWORD 'secret123' CREATEDB;
+
+-- суперпользователь (осторожно):
+CREATE USER myuser WITH PASSWORD 'secret123' SUPERUSER;</pre>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="badge b-blue">Назначение прав</span></div>
+    <pre>GRANT ALL PRIVILEGES ON DATABASE mydb TO myuser;
+
+-- права на таблицы (после \c mydb):
+GRANT ALL ON ALL TABLES    IN SCHEMA public TO myuser;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO myuser;</pre>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="badge b-amber">Управление</span></div>
+    <pre>ALTER USER myuser WITH PASSWORD 'newpassword';
+ALTER USER myuser CREATEDB;           -- добавить право
+ALTER USER myuser NOCREATEDB;         -- убрать право
+
+\du                                    -- список ролей
+DROP USER myuser;</pre>
+  </div>
+</div>
+
+<!-- УДАЛЁННЫЙ ДОСТУП (LINUX) -->
+<div id="remote" class="sec">
+  <div class="sec-title">Удалённый доступ — Linux-сервер</div>
+  <div class="sec-desc">Четыре шага чтобы принимать подключения с любого IP.</div>
+
+  <div class="card">
+    <div class="card-head"><div class="step-num">1</div><div class="card-title">postgresql.conf — разрешить слушать все адреса</div></div>
+    <pre>sudo nano /etc/postgresql/16/main/postgresql.conf</pre>
+    <p>Найдите и измените:</p>
+    <pre>#listen_addresses = 'localhost'
+listen_addresses = '*'           # принимать со всех адресов</pre>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="step-num">2</div><div class="card-title">pg_hba.conf — разрешить подключения</div></div>
+    <pre>sudo nano /etc/postgresql/16/main/pg_hba.conf</pre>
+    <p>Добавьте в конец файла:</p>
+    <pre># конкретный пользователь и БД:
+host  mydb  myuser  0.0.0.0/0  scram-sha-256
+
+# все пользователи, все БД:
+host  all   all     0.0.0.0/0  scram-sha-256</pre>
+    <div class="alert alert-info">Используйте <span class="inline-code">scram-sha-256</span> — современный безопасный метод. Старый <span class="inline-code">md5</span> не рекомендуется.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="step-num">3</div><div class="card-title">Перезапустить PostgreSQL</div></div>
+    <pre>sudo systemctl restart postgresql</pre>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="step-num">4</div><div class="card-title">Открыть порт 5432 в firewall</div></div>
+    <pre># UFW:
+sudo ufw allow 5432/tcp
+sudo ufw status
+
+# iptables:
+sudo iptables -A INPUT -p tcp --dport 5432 -j ACCEPT</pre>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">Проверка подключения</div></div>
+    <pre># с другой машины:
+nc -zv YOUR_SERVER_IP 5432
+psql -h YOUR_SERVER_IP -p 5432 -U myuser -d mydb</pre>
+  </div>
+</div>
+
+<!-- WINDOWS SERVER -->
+<div id="windows" class="sec">
+  <div class="sec-title">Удалённый доступ — Windows-сервер</div>
+  <div class="sec-desc">Те же принципы, что на Linux — два конфига + брандмауэр.</div>
+
+  <div class="card">
+    <div class="card-head"><div class="step-num">1</div><div class="card-title">Найдите файлы конфигурации</div></div>
+    <p>По умолчанию PostgreSQL устанавливается сюда:</p>
+    <div class="path-row"><div class="path-label">postgresql.conf</div><div class="path-val">C:\Program Files\PostgreSQL\16\data\postgresql.conf</div></div>
+    <div class="path-row"><div class="path-label">pg_hba.conf</div><div class="path-val">C:\Program Files\PostgreSQL\16\data\pg_hba.conf</div></div>
+    <div class="alert alert-warn">Редактировать нужно от имени администратора. Откройте Notepad через «Запуск от имени администратора» и откройте файл через него.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="step-num">2</div><div class="card-title">postgresql.conf — разрешить все адреса</div></div>
+    <p>Откройте файл и найдите строку <span class="inline-code">listen_addresses</span>. Она может быть закомментирована:</p>
+    <pre>#listen_addresses = 'localhost'</pre>
+    <p>Замените на (или добавьте новую строку):</p>
+    <pre>listen_addresses = '*'</pre>
+    <p>Также убедитесь что порт не изменён:</p>
+    <pre>port = 5432</pre>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="step-num">3</div><div class="card-title">pg_hba.conf — добавить разрешение</div></div>
+    <p>В конец файла добавьте строку. Формат: тип, база, пользователь, адрес, метод:</p>
+    <pre># конкретный пользователь и БД:
+host  mydb  myuser  0.0.0.0/0  scram-sha-256
+
+# все — для тестовой среды:
+host  all   all     0.0.0.0/0  scram-sha-256</pre>
+    <div class="alert alert-info">IPv6 — если нужно разрешить и для IPv6-адресов, добавьте вторую строку:<br><span class="inline-code">host all all ::/0 scram-sha-256</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="step-num">4</div><div class="card-title">Перезапустить службу PostgreSQL</div></div>
+    <p>PowerShell (от администратора):</p>
+    <pre>Restart-Service postgresql-x64-16</pre>
+    <p>Или через <span class="inline-code">services.msc</span>: найдите службу → правая кнопка → «Перезапустить».</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="step-num">5</div><div class="card-title">Брандмауэр Windows — открыть порт 5432</div></div>
+    <p>PowerShell (от администратора):</p>
+    <pre>New-NetFirewallRule `
+  -DisplayName "PostgreSQL 5432" `
+  -Direction Inbound `
+  -Protocol TCP `
+  -LocalPort 5432 `
+  -Action Allow</pre>
+    <p>Или вручную: <span class="inline-code">Брандмауэр Windows → Входящие правила → Создать правило → Порт → TCP → 5432</span></p>
+    <div class="alert alert-warn">Если сервер находится за роутером — также пробросьте порт 5432 в настройках роутера (NAT/Port Forwarding).</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="step-num">6</div><div class="card-title">Проверка</div></div>
+    <p>С Windows (PowerShell):</p>
+    <pre>Test-NetConnection -ComputerName YOUR_SERVER_IP -Port 5432</pre>
+    <p>С Linux:</p>
+    <pre>nc -zv YOUR_SERVER_IP 5432
+psql -h YOUR_SERVER_IP -p 5432 -U myuser -d mydb</pre>
+    <div class="alert alert-ok">Если <span class="inline-code">TcpTestSucceeded: True</span> — порт доступен и PostgreSQL слушает.</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">Клиенты для подключения к PostgreSQL</div></div>
+    <div class="grid2">
+      <div class="tool-card">
+        <div class="tool-name">pgAdmin 4</div>
+        <div class="tool-desc">Официальный GUI. Servers → Register → Server → вкладка Connection: хост, порт, БД, пользователь, пароль.</div>
+        <span class="badge b-green">бесплатно</span><span class="badge b-gray">Windows / Linux</span>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">DBeaver</div>
+        <div class="tool-desc">New Connection → PostgreSQL → заполнить Host, Port, Database, User, Password → Test Connection.</div>
+        <span class="badge b-green">бесплатно</span><span class="badge b-gray">Windows / Linux / Mac</span>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">TablePlus</div>
+        <div class="tool-desc">Удобный нативный клиент. Create new connection → PostgreSQL → ввести данные.</div>
+        <span class="badge b-amber">платный / trial</span>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">psql (CLI)</div>
+        <div class="tool-desc">Стандартная утилита командной строки. Входит в установку PostgreSQL на любой ОС.</div>
+        <span class="badge b-green">встроен</span><span class="badge b-gray">Windows / Linux</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function go(id,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  btn.classList.add('on');
+}
+function os(id,btn){
+  const parent=btn.closest('.card');
+  parent.querySelectorAll('.os-pane').forEach(p=>p.classList.remove('on'));
+  parent.querySelectorAll('.os-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  btn.classList.add('on');
+}
+</script>

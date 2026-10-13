@@ -1,0 +1,33 @@
+# proton-net.ru — основной сайт → :2201
+proton-net.ru {
+	reverse_proxy 127.0.0.1:2201
+}
+
+# chat.proton-net.ru / chat.proton-net.online — мессенджер :2200 только с разрешённых IP
+# Если IP не совпал — редирект на https://proton-net.ru
+(chat_access) {
+	@allowed remote_ip 136.169.158.123/32
+	handle @allowed {
+		reverse_proxy 127.0.0.1:2200
+	}
+
+	# Диагностика: открой URL с `?debug_ip=1`, чтобы увидеть remote_ip,
+	# который реально видит Caddy.
+	@debug query debug_ip=1
+	handle @debug {
+		respond 403 "Denied by IP. remote_ip={http.request.remote.host}"
+	}
+
+	handle {
+		header X-Debug-Remote-IP "{http.request.remote.host}"
+		redir https://proton-net.ru{uri} permanent
+	}
+}
+
+chat.proton-net.ru {
+	import chat_access
+}
+
+chat.proton-net.online {
+	redir https://chat.proton-net.ru{uri} permanent
+}

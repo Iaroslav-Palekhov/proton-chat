@@ -1,0 +1,22 @@
+py -m venv venv
+
+venv\Scripts\activate
+
+деактивация если нужно deactivate
+
+список с зависимостями создать
+pip freeze > requirements.txt
+
+
+# Создайте папку для пакетов
+mkdir offline_packages
+
+# Скачайте все зависимости и их зависимости (setuptools и wheel уже в requirements.txt)
+pip download -r requirements.txt -d offline_packages
+
+# ВАЖНО: некоторые пакеты скачиваются только как исходники (.tar.gz), например http-ece.
+# Соберите wheel из исходников (чтобы офлайн не собирать заново):
+pip wheel http-ece -w offline_packages --no-deps --find-links offline_packages
+
+# На машине без интернета
+pip install --no-index --find-links=offline_packages -r requirements.txt

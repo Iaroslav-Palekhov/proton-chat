@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Миграция PostgreSQL: дамп, перенос, восстановление</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5f7fc;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 40px 20px;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1050px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 40px -12px rgba(0, 20, 40, 0.2);
+            padding: 40px 48px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            color: #0b1e33;
+        }
+
+        .subhead {
+            font-size: 1rem;
+            color: #475569;
+            border-left: 4px solid #3b82f6;
+            padding-left: 16px;
+            margin-top: -2px;
+            margin-bottom: 32px;
+            background: #f8fafc;
+            border-radius: 0 12px 12px 0;
+            padding: 12px 20px;
+            background: #f1f5f9;
+        }
+
+        .step {
+            margin-top: 36px;
+            border-top: 1px solid #e9edf4;
+            padding-top: 32px;
+        }
+
+        .step:first-of-type {
+            border-top: none;
+            padding-top: 0;
+            margin-top: 0;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .step-number {
+            background: #1e293b;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 4px 14px;
+            border-radius: 40px;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0f1c2e;
+        }
+
+        .step-desc {
+            color: #334155;
+            margin-bottom: 16px;
+            font-size: 1rem;
+            background: #fafcff;
+            padding: 4px 0;
+        }
+
+        .code-block {
+            background: #0b1a2b;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin: 16px 0 18px 0;
+            overflow-x: auto;
+            color: #e2e8f0;
+            font-family: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .code-block .cmd {
+            color: #b2d6ff;
+        }
+
+        .code-block .comment {
+            color: #7e8c9e;
+            font-style: italic;
+        }
+
+        .code-block .var {
+            color: #fbbf24;
+        }
+
+        .code-block .path {
+            color: #7dd3fc;
+        }
+
+        .code-block .flag {
+            color: #a5b4fc;
+        }
+
+        .code-block .string {
+            color: #6ee7b7;
+        }
+
+        .inline-code {
+            background: #edf2f7;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+            color: #1e293b;
+            border: 1px solid #dce2ec;
+        }
+
+        .note-box {
+            background: #f1f6fe;
+            border-radius: 18px;
+            padding: 18px 24px;
+            margin: 22px 0 10px 0;
+            border-left: 6px solid #3b82f6;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .note-box strong {
+            color: #1e3a8a;
+        }
+
+        .note-icon {
+            font-size: 1.4rem;
+            line-height: 1.3;
+        }
+
+        .warning-box {
+            background: #fef6e6;
+            border-left: 6px solid #eab308;
+            border-radius: 18px;
+            padding: 18px 24px;
+            margin: 22px 0 10px 0;
+        }
+
+        .warning-box strong {
+            color: #854d0e;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e4b7a;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 14px;
+            border-radius: 30px;
+            letter-spacing: 0.3px;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px dashed #dce2ec;
+            margin: 40px 0 20px;
+        }
+
+        .footer-note {
+            margin-top: 40px;
+            background: #f0f4fa;
+            border-radius: 20px;
+            padding: 20px 28px;
+            color: #1e293b;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 700px) {
+            .container {
+                padding: 24px 16px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .step-title {
+                font-size: 1.25rem;
+            }
+            .code-block {
+                padding: 14px 16px;
+                font-size: 0.8rem;
+            }
+        }
+
+        .copy-hint {
+            font-size: 0.75rem;
+            color: #6b7e99;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>
+        <span>🐘</span> Перенос PostgreSQL
+    </h1>
+    <div class="subhead">
+        Пошаговая инструкция: дамп &nbsp;→&nbsp; перенос &nbsp;→&nbsp; восстановление
+    </div>
+
+    <!-- Шаг 1 -->
+    <div class="step">
+        <div class="step-header">
+            <span class="step-number">Шаг 1</span>
+            <span class="step-title">Создаём дамп на старом сервере</span>
+        </div>
+        <div class="step-desc">
+            Зайдите на старый сервер по SSH и выполните <span class="inline-code">pg_dump</span> в каталог <span class="inline-code">/tmp</span>.
+        </div>
+        <div class="code-block">
+            <span class="cmd">sudo -u postgres pg_dump -F c -b -v -f /tmp/proton.dump proton</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.92rem; color: #2c3e5c; margin: 4px 0 12px 0;">
+            <span><span class="badge">-F c</span> custom (сжатый бинарный)</span>
+            <span><span class="badge">-b</span> включить BLOB‑объекты</span>
+            <span><span class="badge">-v</span> подробный вывод</span>
+            <span><span class="badge">/tmp/proton.dump</span> путь к дампу</span>
+            <span><span class="badge">proton</span> имя базы</span>
+        </div>
+        <div class="code-block" style="background: #102433;">
+            <span class="cmd">ls -lh /tmp/proton.dump</span>
+        </div>
+        <div class="note-box">
+            <span class="note-icon">✅</span>
+            <div>Убедитесь, что файл создан и имеет ненулевой размер.</div>
+        </div>
+    </div>
+
+    <!-- Шаг 2 -->
+    <div class="step">
+        <div class="step-header">
+            <span class="step-number">Шаг 2</span>
+            <span class="step-title">Перенос дампа на новый сервер</span>
+        </div>
+        <div class="step-desc">
+            С того же терминала (на старом сервере) скопируйте файл на новый сервер через <span class="inline-code">scp</span>.
+        </div>
+        <div class="code-block">
+            <span class="cmd">scp /tmp/proton.dump user@new-server-ip:/tmp/</span>
+        </div>
+        <div style="background: #f8fafc; border-radius: 14px; padding: 12px 18px; margin: 8px 0 12px 0; color: #1e293b; font-size: 0.92rem;">
+            <span style="display: inline-block; margin-right: 20px;"><span class="badge" style="background:#d1dbe8;">user</span> — пользователь на новом сервере</span>
+            <span style="display: inline-block;"><span class="badge" style="background:#d1dbe8;">new-server-ip</span> — IP нового сервера</span>
+        </div>
+        <div class="note-box">
+            <span class="note-icon">📁</span>
+            <div>Если <span class="inline-code">/tmp</span> недоступен для записи, укажите другую папку (например, домашнюю).</div>
+        </div>
+    </div>
+
+    <!-- Шаг 3 -->
+    <div class="step">
+        <div class="step-header">
+            <span class="step-number">Шаг 3</span>
+            <span class="step-title">Подготовка нового сервера</span>
+        </div>
+        <div class="step-desc">
+            Зайдите на новый сервер, проверьте PostgreSQL и создайте пустую базу <span class="inline-code">proton</span>.
+        </div>
+        <div class="code-block">
+            <span class="cmd">ssh user@new-server-ip</span>
+            <span class="cmd" style="display: block; margin-top: 8px;">sudo systemctl status postgresql</span>
+            <span class="cmd" style="display: block; margin-top: 4px;">sudo systemctl start postgresql   <span class="comment"># если не запущена</span></span>
+            <span class="cmd" style="display: block; margin-top: 8px;">sudo -u postgres createdb proton</span>
+        </div>
+        <div class="warning-box">
+            <strong>⚠️ Если база уже существует</strong> и вы хотите перезаписать: <br>
+            <span class="inline-code">sudo -u postgres dropdb proton</span> &nbsp; затем снова <span class="inline-code">createdb proton</span>
+        </div>
+    </div>
+
+    <!-- Шаг 4 -->
+    <div class="step">
+        <div class="step-header">
+            <span class="step-number">Шаг 4</span>
+            <span class="step-title">Восстанавливаем дамп</span>
+        </div>
+        <div class="step-desc">
+            Используйте <span class="inline-code">pg_restore</span> для восстановления из custom‑дампа.
+        </div>
+        <div class="code-block">
+            <span class="cmd">sudo -u postgres pg_restore -d proton -v /tmp/proton.dump</span>
+        </div>
+        <div style="margin: 10px 0 6px 0; font-size: 0.95rem; color: #1e293b;">
+            <span class="badge" style="background:#dbeafe;">-d proton</span> база для восстановления
+        </div>
+        <div class="note-box" style="border-left-color: #8b5cf6;">
+            <span class="note-icon">⚙️</span>
+            <div><strong>Альтернатива:</strong> если хотите, чтобы <span class="inline-code">pg_restore</span> сам создал базу из дампа:<br>
+            <span class="inline-code">sudo -u postgres pg_restore -C -d postgres -v /tmp/proton.dump</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Шаг 5 -->
+    <div class="step">
+        <div class="step-header">
+            <span class="step-number">Шаг 5</span>
+            <span class="step-title">Проверка восстановления</span>
+        </div>
+        <div class="grid-2">
+            <div class="code-block" style="margin:0;">
+                <span class="cmd">sudo -u postgres psql -d proton -c "\dt"</span>
+                <div style="color: #9aaec9; font-size:0.8rem; margin-top:6px;">список таблиц</div>
+            </div>
+            <div class="code-block" style="margin:0;">
+                <span class="cmd">sudo -u postgres psql -d proton -c "SELECT count(*) FROM <span class="var">имя_таблицы</span>;"</span>
+                <div style="color: #9aaec9; font-size:0.8rem; margin-top:6px;">замените <span class="var">имя_таблицы</span></div>
+            </div>
+        </div>
+        <div class="note-box" style="border-left-color: #22c55e;">
+            <span class="note-icon">🔍</span>
+            <div>Убедитесь, что данные присутствуют и структура корректна.</div>
+        </div>
+    </div>
+
+    <!-- Шаг 6 -->
+    <div class="step">
+        <div class="step-header">
+            <span class="step-number">Шаг 6</span>
+            <span class="step-title">Очистка временных файлов</span>
+        </div>
+        <div class="step-desc">
+            После успешного восстановления удалите дамп на обоих серверах.
+        </div>
+        <div class="code-block">
+            <span class="cmd">sudo rm /tmp/proton.dump</span>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px;">
+            <span class="badge" style="background:#e2e8f0;">старый сервер</span>
+            <span class="badge" style="background:#e2e8f0;">новый сервер</span>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Важные нюансы -->
+    <div style="margin-top: 12px;">
+        <h2 style="font-size: 1.5rem; font-weight: 600; display: flex; gap: 8px; align-items: center; margin-bottom: 16px;">
+            <span>📌</span> Важные нюансы
+        </h2>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="background: #f9fbfe; border-radius: 18px; padding: 16px 22px; border: 1px solid #e3e9f2;">
+                <strong>🧩 Версии PostgreSQL</strong><br>
+                Желательно, чтобы версии на старом и новом серверах совпадали (или на новом была новее). Иначе возможны проблемы совместимости.
+            </div>
+            <div style="background: #f9fbfe; border-radius: 18px; padding: 16px 22px; border: 1px solid #e3e9f2;">
+                <strong>👥 Пользователи и роли</strong><br>
+                <span class="inline-code">pg_dump</span> одной базы <strong>не сохраняет</strong> пользователей и роли кластера. Создайте их вручную на новом сервере и выдайте привилегии.
+            </div>
+            <div style="background: #f9fbfe; border-radius: 18px; padding: 16px 22px; border: 1px solid #e3e9f2;">
+                <strong>🔐 Права доступа</strong><br>
+                У пользователя, под которым выполняется <span class="inline-code">scp</span>, должны быть права на запись в целевую папку (обычно <span class="inline-code">/tmp</span> доступен).
+            </div>
+            <div style="background: #f9fbfe; border-radius: 18px; padding: 16px 22px; border: 1px solid #e3e9f2;">
+                <strong>📦 Размер дампа</strong><br>
+                Для больших файлов используйте <span class="inline-code">rsync --partial</span> — он умеет докачивать при обрыве связи.
+            </div>
+        </div>
+    </div>
+
+    <!-- Дополнительно -->
+    <div class="footer-note">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span style="background: #1e293b; color:white; padding:2px 16px; border-radius: 40px; font-size:0.8rem;">💡 совет</span>
+            <span>Если на старом сервере есть дополнительные пользователи/роли — уточните версию <span class="inline-code">psql --version</span> и <span class="inline-code">pg_dump --version</span>, чтобы перенести их корректно.</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 28px; text-align: right; font-size: 0.8rem; color: #8b9bb8; border-top: 1px solid #edf2f9; padding-top: 18px;">
+        Инструкция подготовлена на основе пошагового руководства
+    </div>
+
+</div>
+</body>
+</html>
