@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Бот Proton — Управление{% endblock %}
+
+{% block content %}
+<style>
+    .app-container, .sidebar, .main-content { display: none; }
+
+    .dash-page {
+        min-height: 100vh;
+        background: var(--bg-primary);
+        display: flex;
+        justify-content: center;
+    }
+
+    .dash-card {
+        background: var(--bg-secondary);
+        width: 100%;
+        max-width: 720px;
+        min-height: 100vh;
+    }
+
+    .dash-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+    }
+
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: background 0.2s;
+    }
+    .back-btn:hover { background: var(--bg-tertiary); }
+
+    .dash-header h1 {
+        font-size: 19px;
+        font-weight: 700;
+        margin: 0;
+        flex: 1;
+    }
+
+    .section { padding: 24px 16px 32px; }
+
+    .bot-profile {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: var(--bg-tertiary);
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 16px;
+    }
+
+    .bot-avatar-wrap {
+        position: relative;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    .bot-avatar-wrap:hover .avatar-edit-badge {
+        opacity: 1;
+    }
+
+    .avatar-edit-badge {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+        color: #fff;
+    }
+
+    .bot-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--bg-primary);
+        display: block;
+    }
+
+    .avatar-actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .btn-avatar {
+        padding: 9px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+    .btn-avatar:hover { background: var(--bg-primary); }
+
+    .btn-avatar-accent {
+        background: var(--accent);
+        color: #fff;
+        border-color: transparent;
+    }
+    .btn-avatar-accent:hover { opacity: 0.9; }
+
+    #avatarInput { display: none; }
+
+    .bot-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .bot-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 4px;
+        line-height: 1.4;
+    }
+
+    .info-box {
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 20px;
+    }
+
+    .info-box strong { color: var(--accent); }
+
+    .compose-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 10px;
+        padding: 0 4px;
+    }
+
+    .compose-area {
+        width: 100%;
+        min-height: 160px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 15px;
+        color: var(--text-primary);
+        outline: none;
+        resize: vertical;
+        line-height: 1.5;
+        font-family: inherit;
+    }
+    .compose-area:focus { border-color: var(--accent); }
+
+    .send-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 14px;
+        align-items: center;
+    }
+
+    .btn-send {
+        flex: 1;
+        padding: 14px 20px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    .btn-send:hover { opacity: 0.9; }
+    .btn-send:disabled { opacity: 0.5; cursor: default; }
+
+    .last-broadcast {
+        margin-top: 28px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+    }
+
+    .last-broadcast-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+    }
+
+    .last-broadcast-text {
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 14px;
+        color: var(--text-primary);
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.5;
+    }
+
+    .last-broadcast-time {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 8px;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        z-index: 100;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+</style>
+
+<div class="dash-page">
+<div class="dash-card">
+
+    <div class="dash-header">
+        <a href="{{ url_for('dashboard') }}" class="back-btn js-back" title="Назад">
+            <svg width="22" height="22" viewBox="0 0 24 24" class="ico">
+                <use xlink:href="#icon-back"></use>
+            </svg>
+        </a>
+        <h1>Управление ботом</h1>
+    </div>
+
+    <div class="section">
+        <div class="compose-label" style="margin-bottom:12px;">Аватар бота</div>
+        <div class="bot-profile">
+            <label class="bot-avatar-wrap" for="avatarInput" title="Сменить аватар">
+                <img src="{% if bot and bot.avatar %}{{ uploads_url(bot.avatar) }}{% else %}/static/icon/favicon.svg{% endif %}"
+                     alt="Proton" class="bot-avatar" id="botAvatarImg">
+                <span class="avatar-edit-badge">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </span>
+            </label>
+            <input type="file" id="avatarInput" accept="image/*">
+            <div>
+                <div class="bot-name">Proton</div>
+                <div class="bot-desc">Официальный бот уведомлений. Нажмите на аватар, чтобы загрузить новое фото.</div>
+            </div>
+        </div>
+        <div class="avatar-actions">
+            <button type="button" class="btn-avatar btn-avatar-accent" onclick="document.getElementById('avatarInput').click()">Загрузить фото</button>
+            <button type="button" class="btn-avatar" onclick="resetBotAvatar()">Вернуть стандартный</button>
+        </div>
+
+        <div class="info-box">
+            Сообщение будет доставлено <strong>{{ user_count }}</strong> пользователям.
+            У каждого появится (или обновится) чат <strong>Proton</strong> — как канал обновлений в Telegram.
+        </div>
+
+        <div class="compose-label">Новое сообщение</div>
+        <textarea class="compose-area" id="botMessage" placeholder="Текст обновления для всех пользователей..."></textarea>
+        <div class="send-row">
+            <button type="button" class="btn-send" id="sendBtn" onclick="sendBroadcast()">Отправить всем</button>
+        </div>
+
+        {% if last_msg %}
+        <div class="last-broadcast">
+            <div class="last-broadcast-title">Последняя рассылка</div>
+            <div class="last-broadcast-text">{{ last_msg.content }}</div>
+            <div class="last-broadcast-time">{{ last_msg.timestamp.strftime('%d.%m.%Y %H:%M') if last_msg.timestamp else '' }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function sendBroadcast() {
+    const textarea = document.getElementById('botMessage');
+    const btn = document.getElementById('sendBtn');
+    const content = textarea.value.trim();
+    if (!content) {
+        showToast('Введите текст сообщения');
+        return;
+    }
+    if (!confirm('Отправить это сообщение всем пользователям?')) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Отправка...';
+    try {
+        const r = await fetch('{{ url_for("dashboard_bot_send") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ content })
+        });
+        const d = await r.json();
+        if (d.success) {
+            showToast('Отправлено ' + d.sent_count + ' пользователям');
+            textarea.value = '';
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(d.error || 'Ошибка');
+        }
+    } catch (e) {
+        showToast('Ошибка отправки');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Отправить всем';
+    }
+}
+
+document.getElementById('avatarInput').addEventListener('change', async function() {
+    const file = this.files && this.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('avatar', file);
+    showToast('Загрузка...');
+    try {
+        const r = await fetch('{{ url_for("dashboard_bot_avatar") }}', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.success) {
+            document.getElementById('botAvatarImg').src = d.avatar + '?t=' + Date.now();
+            showToast('Аватар обновлён');
+        } else {
+            showToast(d.error || 'Ошибка');
+        }
+    } catch (e) {
+        showToast('Ошибка загрузки');
+    }
+    this.value = '';
+});
+
+async function resetBotAvatar() {
+    if (!confirm('Вернуть стандартную аватарку Proton?')) return;
+    try {
+        const r = await fetch('{{ url_for("dashboard_bot_avatar_reset") }}', { method: 'POST' });
+        const d = await r.json();
+        if (d.success) {
+            document.getElementById('botAvatarImg').src = d.avatar + '?t=' + Date.now();
+            showToast('Стандартная аватарка восстановлена');
+        } else {
+            showToast(d.error || 'Ошибка');
+        }
+    } catch (e) {
+        showToast('Ошибка');
+    }
+}
+</script>
+{% endblock %}

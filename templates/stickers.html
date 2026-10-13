@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Стикеры — Мессенджер{% endblock %}
+{% block content %}
+<style>
+.app-container,.sidebar,.main-content{display:none}
+.sp-page{min-height:100vh;background:var(--bg-primary);display:flex;justify-content:center}
+.sp-card{background:var(--bg-secondary);width:100%;max-width:640px;min-height:100vh}
+.sp-header{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg-secondary);z-index:10}
+.sp-header h1{font-size:19px;margin:0}
+.back-btn{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text-primary);text-decoration:none}
+.back-btn:hover{background:var(--bg-tertiary)}
+.sp-section{padding:20px 16px}
+.sp-title{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px}
+.sp-box{background:var(--bg-tertiary);border-radius:16px;padding:16px;margin-bottom:16px}
+.sp-input{width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg-primary);color:var(--text-primary);margin-bottom:10px}
+.sp-btn{padding:10px 16px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+.sp-pack{margin-bottom:12px;padding:12px;border-radius:12px;background:var(--bg-primary)}
+.sp-pack h3{margin:0 0 8px;font-size:15px}
+.sp-stickers{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.sp-sticker-item{position:relative;width:56px;height:56px}
+.sp-sticker-item img{width:56px;height:56px;object-fit:contain;border-radius:8px;background:var(--bg-tertiary)}
+.sp-sticker-del{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border:none;border-radius:50%;background:var(--danger);color:#fff;font-size:14px;line-height:1;cursor:pointer;z-index:2}
+.sp-pack-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.sp-btn-danger{background:rgba(255,71,87,.2);color:#ff6b7a}
+.sp-btn-muted{background:var(--bg-tertiary);color:var(--text-secondary)}
+.sp-search-row{display:flex;gap:8px;margin-bottom:12px}
+.search-result{padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.search-result-actions{display:flex;gap:8px;align-items:center}
+.sp-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 18px;border-radius:12px;background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-primary);font-size:14px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.25);display:none;max-width:90%}
+.sp-toast.show{display:block}
+.sp-toast.error{border-color:var(--danger);color:#ff8a8a}
+.sp-toast.ok{border-color:var(--accent)}
+</style>
+<div class="sp-page"><div class="sp-card">
+<div class="sp-header">
+<a href="{{ url_for('chats') }}" class="back-btn"><svg width="22" height="22" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-back"></use></svg></a>
+<h1>Стикеры</h1>
+</div>
+
+<div class="sp-section">
+<div class="sp-title">Поиск паков</div>
+<div class="sp-box">
+<div class="sp-search-row">
+<input type="text" class="sp-input" id="packSearch" placeholder="Название пака..." style="margin:0">
+<button type="button" class="sp-btn" onclick="searchPacks()">Найти</button>
+</div>
+<div id="searchResults"></div>
+</div>
+
+<div class="sp-title">Создать свой пак</div>
+<div class="sp-box">
+<input type="text" class="sp-input" id="newPackTitle" placeholder="Название пака">
+<button type="button" class="sp-btn" onclick="createPack()">Создать пак</button>
+</div>
+
+<div class="sp-title">Библиотека</div>
+<div id="libraryPacks" class="sp-box">Загрузка...</div>
+
+<div class="sp-title">Мои паки</div>
+<div id="myPacks" class="sp-box">Загрузка...</div>
+</div>
+</div></div>
+<div id="spToast" class="sp-toast" role="status"></div>
+
+<script>
+const MY_USER_ID = {{ current_user.id }};
+const CSRF_TOKEN = {{ csrf_token|tojson }};
+
+function toast(msg, type) {
+    var el = document.getElementById('spToast');
+    if (!el) { alert(msg); return; }
+    el.textContent = msg;
+    el.className = 'sp-toast show' + (type === 'error' ? ' error' : type === 'ok' ? ' ok' : '');
+    clearTimeout(window._spToastT);
+    window._spToastT = setTimeout(function() { el.className = 'sp-toast'; }, 3500);
+}
+
+function postJson(url, body) {
+    var headers = { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN };
+    var opts = { method: 'POST', headers: headers };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    return fetch(url, opts).then(function(r) {
+        return r.text().then(function(t) {
+            var data = {};
+            try { data = t ? JSON.parse(t) : {}; } catch (e) {
+                throw new Error(r.status === 403 ? 'Обновите страницу (сессия)' : 'Ошибка сервера');
+            }
+            if (!r.ok) throw new Error(data.error || ('Ошибка ' + r.status));
+            return data;
+        });
+    });
+}
+
+function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+}
+
+function searchPacks() {
+    var q = document.getElementById('packSearch').value;
+    fetch('/api/sticker_packs/search?q=' + encodeURIComponent(q)).then(function(r) { return r.json(); }).then(function(d) {
+        var box = document.getElementById('searchResults');
+        if (!d.packs.length) { box.innerHTML = '<div style="color:var(--text-muted)">Ничего не найдено</div>'; return; }
+        box.innerHTML = d.packs.map(function(p) {
+            var actions = '';
+            if (p.is_official) {
+                actions = '<span style="color:var(--text-muted)">Стандартный</span>';
+            } else if (p.owner_id === MY_USER_ID) {
+                actions = '<span style="color:var(--accent)">Ваш пак</span>';
+            } else if (p.in_library) {
+                actions = '<button type="button" class="sp-btn sp-btn-muted" onclick="removeFromLibrary(' + p.id + ')">Убрать</button>';
+            } else {
+                actions = '<button type="button" class="sp-btn" onclick="addPack(' + p.id + ')">Добавить</button>';
+            }
+            return '<div class="search-result"><span>' + esc(p.title) + ' (' + p.sticker_count + ')</span><div class="search-result-actions">' + actions + '</div></div>';
+        }).join('');
+    });
+}
+
+function addPack(id) {
+    postJson('/api/sticker_packs/' + id + '/add').then(function() {
+        toast('Пак добавлен в библиотеку', 'ok');
+        searchPacks();
+        loadAllPacks();
+    }).catch(function(e) { toast(e.message, 'error'); });
+}
+
+function removeFromLibrary(id) {
+    postJson('/api/sticker_packs/' + id + '/remove').then(function() {
+        toast('Пак убран из библиотеки', 'ok');
+        searchPacks();
+        loadAllPacks();
+    }).catch(function(e) { toast(e.message, 'error'); });
+}
+
+function createPack() {
+    var title = document.getElementById('newPackTitle').value.trim();
+    if (title.length < 2) { toast('Название пака минимум 2 символа', 'error'); return; }
+    postJson('/stickers/pack/create', { title: title }).then(function() {
+        document.getElementById('newPackTitle').value = '';
+        toast('Пак создан', 'ok');
+        loadAllPacks();
+    }).catch(function(e) { toast(e.message, 'error'); });
+}
+
+function loadAllPacks() {
+    fetch('/api/my_sticker_packs').then(function(r) { return r.json(); }).then(function(d) {
+        var ownedBox = document.getElementById('myPacks');
+        var libBox = document.getElementById('libraryPacks');
+        var ownedHtml = '';
+        (d.owned || []).forEach(function(p) {
+            ownedHtml += '<div class="sp-pack" data-pack-id="' + p.id + '">';
+            ownedHtml += '<h3>' + esc(p.title) + ' <small style="color:var(--text-muted)">(' + p.sticker_count + ')</small></h3>';
+            ownedHtml += '<div class="sp-pack-actions">';
+            ownedHtml += '<label class="sp-btn" style="display:inline-block;cursor:pointer">+ Стикер<input type="file" accept="image/*" style="display:none" onchange="uploadSticker(' + p.id + ',this)"></label>';
+            ownedHtml += '<button type="button" class="sp-btn sp-btn-danger" data-action="delete-pack" data-pack-id="' + p.id + '" data-pack-title="' + esc(p.title) + '">Удалить пак</button>';
+            ownedHtml += '</div>';
+            if (p.stickers && p.stickers.length) {
+                ownedHtml += '<div class="sp-stickers">' + p.stickers.map(function(s) {
+                    return '<div class="sp-sticker-item"><img src="' + esc(s.url) + '" alt=""><button type="button" class="sp-sticker-del" data-action="delete-sticker" data-sticker-id="' + s.id + '" title="Удалить">×</button></div>';
+                }).join('') + '</div>';
+            }
+            ownedHtml += '</div>';
+        });
+        ownedBox.innerHTML = ownedHtml || '<div style="color:var(--text-muted)">У вас пока нет своих паков</div>';
+
+        var libHtml = '';
+        (d.library || []).forEach(function(p) {
+            libHtml += '<div class="search-result"><span>' + esc(p.title) + ' (' + p.sticker_count + ')</span>';
+            libHtml += '<button type="button" class="sp-btn sp-btn-muted" data-action="remove-library" data-pack-id="' + p.id + '">Убрать из библиотеки</button></div>';
+        });
+        libBox.innerHTML = libHtml || '<div style="color:var(--text-muted)">Добавленных паков нет — найдите пак в поиске и нажмите «Добавить»</div>';
+    }).catch(function(e) { toast(e.message || 'Ошибка загрузки', 'error'); });
+}
+
+function uploadSticker(packId, input) {
+    if (!input.files[0]) return;
+    var fd = new FormData();
+    fd.append('file', input.files[0]);
+    fetch('/stickers/pack/' + packId + '/upload', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': CSRF_TOKEN } })
+        .then(function(r) { return r.text().then(function(t) {
+            var d = {}; try { d = JSON.parse(t); } catch(e) { throw new Error(r.status === 403 ? 'Обновите страницу (сессия)' : 'Ошибка загрузки'); }
+            if (!r.ok) throw new Error(d.error || 'Ошибка');
+            return d;
+        }); })
+        .then(function() { toast('Стикер добавлен', 'ok'); loadAllPacks(); })
+        .catch(function(e) { toast(e.message, 'error'); });
+    input.value = '';
+}
+
+function deleteSticker(id) {
+    if (!confirm('Удалить стикер из пака?')) return;
+    postJson('/stickers/' + id + '/delete').then(function() { toast('Стикер удалён', 'ok'); loadAllPacks(); }).catch(function(e) { toast(e.message, 'error'); });
+}
+
+function deletePack(id, title) {
+    if (!confirm('Удалить пак «' + title + '» и все стикеры?')) return;
+    postJson('/stickers/pack/' + id + '/delete').then(function() { toast('Пак удалён', 'ok'); loadAllPacks(); }).catch(function(e) { toast(e.message, 'error'); });
+}
+
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    e.preventDefault();
+    var action = btn.getAttribute('data-action');
+    if (action === 'delete-sticker') {
+        deleteSticker(parseInt(btn.getAttribute('data-sticker-id'), 10));
+    } else if (action === 'delete-pack') {
+        deletePack(parseInt(btn.getAttribute('data-pack-id'), 10), btn.getAttribute('data-pack-title') || '');
+    } else if (action === 'remove-library') {
+        removeFromLibrary(parseInt(btn.getAttribute('data-pack-id'), 10));
+    }
+});
+
+loadAllPacks();
+</script>
+{% endblock %}

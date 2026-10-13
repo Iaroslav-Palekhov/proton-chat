@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация - Мессенджер{% endblock %}
+
+{% block extra_css %}
+<style>
+.field-hint{font-size:12px;margin-top:4px;color:var(--text-secondary)}
+.field-hint.error{color:#ff4757}
+.field-hint.ok{color:#2ed573}
+input.invalid{border-color:#ff4757!important}
+input.valid{border-color:#2ed573!important}
+.strength-bar{height:4px;border-radius:2px;margin-top:6px;background:var(--border);overflow:hidden}
+.strength-fill{height:100%;width:0;transition:width .3s,background .3s;border-radius:2px}
+.agreement-block{margin:16px 0 4px;display:flex;flex-direction:column;gap:10px}
+.agreement-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text-secondary);line-height:1.4}
+.agreement-item input[type=checkbox]{margin-top:2px;flex-shrink:0;accent-color:var(--accent,#5865f2);width:16px;height:16px;cursor:pointer}
+.agreement-item a{color:var(--accent,#5865f2);text-decoration:none}
+.agreement-item a:hover{text-decoration:underline}
+.no-pd-notice{font-size:12px;color:var(--text-secondary);background:var(--bg-secondary,rgba(0,0,0,.08));border-radius:8px;padding:10px 12px;margin-bottom:4px;line-height:1.5}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" class="ico">
+                    <use xlink:href="#icon-user-plus"></use>
+                </svg>
+            </div>
+            <h1>Создать аккаунт</h1>
+        </div>
+
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('register') }}" id="regForm" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label>Имя пользователя</label>
+                <input type="text" name="username" id="username" placeholder="cool_user" required
+                       minlength="5" maxlength="32" autocomplete="username"
+                       pattern="[a-zA-Z0-9_]{5,32}" value="{{ request.form.username or '' }}">
+                <div class="field-hint" id="username-hint">От 5 до 32 символов: буквы, цифры, _</div>
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" id="email" placeholder="user@example.com" required
+                       maxlength="254" autocomplete="username" value="{{ request.form.email or '' }}">
+                <div class="field-hint" id="email-hint">Например, user@example.com — не используйте настоящую почту</div>
+            </div>
+
+            <div class="form-group">
+                <label>Пароль</label>
+                <input type="password" name="password" id="password" placeholder="Минимум 8 символов" required
+                       minlength="8" maxlength="128" autocomplete="new-password">
+                <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+                <div class="field-hint" id="password-hint">Минимум 8 символов</div>
+            </div>
+
+            <div class="form-group">
+                <label>Подтвердите пароль</label>
+                <input type="password" name="password2" id="password2" placeholder="Повторите пароль" required
+                       maxlength="128" autocomplete="new-password">
+                <div class="field-hint" id="password2-hint"></div>
+            </div>
+
+            <div class="no-pd-notice">
+                ℹ️ Личный некоммерческий проект. Используйте вымышленный username и email — не указывайте настоящее имя, телефон или реальную почту.
+            </div>
+
+            <div class="agreement-block">
+                <label class="agreement-item">
+                    <input type="checkbox" id="agreeTerms" required>
+                    <span>Я прочитал(а) и принимаю <a href="/terms" target="_blank">Пользовательское соглашение</a></span>
+                </label>
+                <label class="agreement-item">
+                    <input type="checkbox" id="agreePrivacy" required>
+                    <span>Я ознакомлен(а) с <a href="/privacy" target="_blank">Политикой конфиденциальности</a> и обязуюсь не указывать при регистрации реальные персональные данные</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-block" id="submitBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" class="ico" style="vertical-align:middle;margin-right:8px">
+                    <use xlink:href="#icon-check"></use>
+                </svg>
+                Зарегистрироваться
+            </button>
+        </form>
+
+        <div class="auth-link">
+            Уже есть аккаунт?
+            <a href="{{ url_for('login') }}">Войти</a>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+var un=document.getElementById('username'),
+    em=document.getElementById('email'),
+    pw=document.getElementById('password'),
+    pw2=document.getElementById('password2'),
+    sf=document.getElementById('strength-fill'),
+    agreeTerms=document.getElementById('agreeTerms'),
+    agreePrivacy=document.getElementById('agreePrivacy'),
+    form=document.getElementById('regForm');
+
+function hint(id,msg,ok){
+    var el=document.getElementById(id);
+    el.textContent=msg;
+    el.className='field-hint'+(ok===true?' ok':ok===false?' error':'');
+}
+function markInput(el,ok){
+    el.classList.toggle('valid',ok===true);
+    el.classList.toggle('invalid',ok===false);
+}
+
+un.addEventListener('input',function(){
+    var v=this.value,ok=/^[a-zA-Z0-9_]{5,32}$/.test(v);
+    markInput(this,v.length?ok:null);
+    hint('username-hint',v.length<5?'Минимум 5 символов':v.length>32?'Максимум 32 символа':!/^[a-zA-Z0-9_]+$/.test(v)?'Только буквы, цифры и _':'Имя пользователя подходит',v.length?ok:null);
+});
+
+em.addEventListener('input',function(){
+    var ok=this.checkValidity()&&this.value.length>0;
+    markInput(this,this.value.length?(ok?true:false):null);
+    hint('email-hint',ok?'Формат подходит':'Нужен формат user@example.com',this.value.length?(ok?true:false):null);
+});
+
+function pwStrength(p){
+    var s=0;
+    if(p.length>=8)s++;
+    if(p.length>=12)s++;
+    if(/[A-Z]/.test(p))s++;
+    if(/[0-9]/.test(p))s++;
+    if(/[^A-Za-z0-9]/.test(p))s++;
+    return s;
+}
+
+pw.addEventListener('input',function(){
+    var v=this.value,s=pwStrength(v),
+        colors=['','#ff4757','#ff6b35','#ffa502','#2ed573','#2ed573'],
+        labels=['','Очень слабый','Слабый','Средний','Надёжный','Отличный'];
+    sf.style.width=(v.length?(s/5*100)+'%':'0');
+    sf.style.background=colors[s]||'';
+    markInput(this,v.length?(v.length>=8?true:false):null);
+    hint('password-hint',v.length?(v.length<8?'Минимум 8 символов':labels[s]):'Минимум 8 символов',v.length?(v.length>=8?true:false):null);
+    if(pw2.value)checkPw2();
+});
+
+function checkPw2(){
+    var ok=pw2.value===pw.value&&pw2.value.length>0;
+    markInput(pw2,pw2.value.length?(ok?true:false):null);
+    hint('password2-hint',pw2.value.length?(ok?'Пароли совпадают':'Пароли не совпадают'):'',pw2.value.length?(ok?true:false):null);
+}
+pw2.addEventListener('input',checkPw2);
+
+form.addEventListener('submit',function(e){
+    var errors=[];
+    if(!/^[a-zA-Z0-9_]{5,32}$/.test(un.value))errors.push('Имя пользователя: от 5 до 32 символов (буквы, цифры, _)');
+    if(!em.checkValidity()||!em.value)errors.push('Укажите email в формате user@example.com');
+    if(pw.value.length<8)errors.push('Пароль должен быть минимум 8 символов');
+    if(pw.value!==pw2.value)errors.push('Пароли не совпадают');
+    if(!agreeTerms.checked)errors.push('Необходимо принять Пользовательское соглашение');
+    if(!agreePrivacy.checked)errors.push('Необходимо ознакомиться с Политикой конфиденциальности');
+    if(errors.length){e.preventDefault();alert(errors.join('\n'));}
+});
+})();
+</script>
+{% endblock %}

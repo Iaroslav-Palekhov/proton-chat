@@ -1,0 +1,1205 @@
+:root {
+    --bg-primary: #0b141a;
+    --bg-secondary: #1f2c33;
+    --bg-tertiary: #2a3942;
+    --bg-hover: #2e3e48;
+    --accent: #9f60f5;
+    --accent-hover: #8b4de0;
+    --success: #9f60f5;
+    --sent-message: #3b1a7a;
+    --sent-message-text: #ffffff;
+    --messages-bg: #0e1c26;
+    --text-primary: #ffffff;
+    --text-secondary: #8696a0;
+    --text-muted: #667781;
+    --border: #3c4a53;
+    --received-message: #1f2c33;
+    --danger: #df4949;
+    --danger-bg: rgba(223, 73, 73, 0.15);
+    --warning: #ffc107;
+    --shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.2);
+    --transition: all 0.3s ease;
+    --radius-lg: 30px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+}
+
+/* Светлая тема */
+[data-theme="light"] {
+    --bg-primary: #f0f2f5;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f0f2f5;
+    --bg-hover: #e8eaed;
+    --text-primary: #111b21;
+    --text-secondary: #54656f;
+    --text-muted: #8696a0;
+    --border: #d1d7db;
+    --received-message: #ffffff;
+    --danger: #df4949;
+    --danger-bg: rgba(223, 73, 73, 0.1);
+    --shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+   СВЕТЛАЯ ТЕМА — полный набор переопределений
+   ============================================================ */
+
+[data-theme="light"] body {
+    background: linear-gradient(145deg, #f0f2f5 0%, #e8eaed 100%);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .auth-wrapper {
+    background: linear-gradient(145deg, #f0f2f5 0%, #e8eaed 100%);
+}
+
+[data-theme="light"] .form-group input,
+[data-theme="light"] .form-group textarea,
+[data-theme="light"] .form-group select {
+    background: #ffffff;
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .form-group input:focus,
+[data-theme="light"] .form-group textarea:focus {
+    background: #ffffff;
+    border-color: var(--accent);
+}
+
+[data-theme="light"] .auth-container {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Фон области сообщений */
+[data-theme="light"] .messages-container {
+    background-color: var(--messages-bg);
+    background-image: none;
+}
+
+/* Кнопки в input-group */
+[data-theme="light"] .input-group button:hover {
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Пузыри сообщений */
+[data-theme="light"] .message.sent .message-bubble,
+[data-theme="light"] .message.sent .message-bubble {
+    color: var(--sent-message-text);
+}
+
+[data-theme="light"] .message.received .message-bubble {
+    color: #111b21;
+}
+
+[data-theme="light"] .message.sent .message-meta {
+    color: rgba(17, 27, 33, 0.55) !important;
+    opacity: 1 !important;
+}
+
+/* Код внутри сообщений */
+[data-theme="light"] pre.code-block {
+    background: rgba(0, 0, 0, 0.06) !important;
+    color: #111b21;
+}
+
+[data-theme="light"] code.inline-code {
+    background: rgba(0, 0, 0, 0.07) !important;
+    color: var(--accent);
+}
+
+/* Файлы */
+[data-theme="light"] .file-message {
+    background: rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid var(--border);
+}
+[data-theme="light"] .file-message:hover {
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+[data-theme="light"] .file-message.sending {
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Превью ссылок */
+[data-theme="light"] .link-preview {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid var(--border) !important;
+}
+[data-theme="light"] .link-preview:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .message.sent .link-preview {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .message.sent .link-preview-title,
+[data-theme="light"] .message.sent .link-preview-description {
+    color: var(--text-primary) !important;
+}
+[data-theme="light"] .message.sent .link-preview-url {
+    color: var(--accent) !important;
+}
+
+/* Reply preview */
+[data-theme="light"] .reply-preview {
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .reply-preview:hover {
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Forwarded header */
+[data-theme="light"] .forwarded-header {
+    border-bottom: 1px solid var(--border) !important;
+    color: var(--text-muted);
+}
+
+/* Highlight animation */
+[data-theme="light"] .message-bubble.highlighted {
+    animation: highlight-light 1.5s ease;
+}
+@keyframes highlight-light {
+    0% { background: rgba(0, 0, 0, 0.12); }
+    100% { background: var(--sent-message); }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background: linear-gradient(145deg, #0b141a 0%, #0c1218 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Контейнеры */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    max-width: 1600px;
+    margin: 0 auto;
+    background: var(--bg-primary);
+    box-shadow: var(--shadow);
+}
+
+/* Аутентификация */
+.auth-container {
+    max-width: 400px;
+    width: 100%;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 40px 30px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.logo-icon {
+    font-size: 48px;
+    background: var(--accent);
+    width: 80px;
+    height: 80px;
+    line-height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    color: white;
+}
+
+.logo h1 {
+    color: var(--text-primary);
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+}
+
+/* Центрирование формы входа */
+.auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    width: 100%;
+    padding: 20px;
+    background: linear-gradient(145deg, #0b141a 0%, #0c1218 100%);
+}
+
+/* Формы */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 16px 18px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 16px;
+    transition: var(--transition);
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-hover);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* Кнопки */
+.btn {
+    padding: 16px 24px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 168, 132, 0.2);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn-danger {
+    background: var(--danger);
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-sm {
+    padding: 10px 16px;
+    font-size: 14px;
+}
+
+.btn-icon {
+    padding: 10px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+}
+
+/* Ссылки */
+.auth-link {
+    text-align: center;
+    margin-top: 25px;
+    color: var(--text-secondary);
+    font-size: 15px;
+}
+
+.auth-link a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+.auth-link a:hover {
+    text-decoration: underline;
+}
+
+/* Сообщения об ошибках */
+.error-message,
+.alert {
+    background: var(--danger-bg);
+    color: var(--danger);
+    padding: 14px;
+    border-radius: var(--radius-md);
+    margin-bottom: 25px;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid rgba(223, 73, 73, 0.3);
+}
+
+.success-message {
+    background: rgba(0, 168, 132, 0.15);
+    color: var(--success);
+    border-color: rgba(0, 168, 132, 0.3);
+}
+
+/* Навигация */
+.sidebar {
+    width: 380px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+}
+
+/* Шапка */
+.header {
+    padding: 15px 20px;
+    background: var(--bg-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent);
+}
+
+.avatar-sm {
+    width: 35px;
+    height: 35px;
+}
+
+.avatar-lg {
+    width: 120px;
+    height: 120px;
+}
+
+.user-details h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-details p {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.status {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status.online {
+    background: var(--success);
+}
+
+.status.offline {
+    background: var(--text-muted);
+}
+
+/* Поиск */
+.search-bar {
+    padding: 10px 15px;
+    background: var(--bg-tertiary);
+    margin: 10px 15px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.search-bar input {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    width: 100%;
+    font-size: 15px;
+}
+
+.search-bar input::placeholder {
+    color: var(--text-muted);
+}
+
+.search-bar input:focus {
+    outline: none;
+}
+
+/* Список чатов */
+.chats-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.chat-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: var(--transition);
+    border: 1px solid transparent;
+}
+
+.chat-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+    transform: translateX(5px);
+}
+
+.chat-item.active {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+}
+
+.chat-avatar {
+    position: relative;
+    margin-right: 12px;
+}
+
+.chat-avatar img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.group-avatar {
+    background: linear-gradient(145deg, #00a884, #008f70);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+}
+
+.unread-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    border: 2px solid var(--bg-secondary);
+}
+
+.chat-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.chat-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-time {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.chat-preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-preview p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.chat-badge {
+    background: var(--accent);
+    color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Контейнер чата */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--bg-primary);
+}
+
+.chat-header {
+    padding: 15px 20px;
+    background: var(--bg-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.chat-user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.chat-user-details h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.chat-user-details p {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* Сообщения */
+.messages-container {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #0e1c26;
+    background-image: radial-gradient(circle at 10% 20%, rgba(0, 168, 132, 0.03) 0%, transparent 20%);
+}
+
+.message {
+    max-width: 65%;
+    clear: both;
+    animation: messageAppear 0.3s ease-out;
+}
+
+@keyframes messageAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message.sent {
+    align-self: flex-end;
+}
+
+.message.received {
+    align-self: flex-start;
+}
+
+.message-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.message.sent .message-wrapper {
+    flex-direction: row-reverse;
+}
+
+.message-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.message-bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.message.sent .message-bubble {
+    background: var(--sent-message);
+    color: var(--sent-message-text, white);
+    border-bottom-right-radius: 4px;
+}
+
+.message.received .message-bubble {
+    background: var(--received-message);
+    color: var(--text-primary);
+    border-bottom-left-radius: 4px;
+}
+
+.message-content {
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+.message-content p {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.message-image {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-bottom: 5px;
+}
+
+.message-meta {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+}
+
+.message.sent .message-meta {
+    color: var(--sent-message-text, #ffffff);
+    opacity: 0.7;
+}
+
+.message.received .message-meta {
+    color: var(--text-muted);
+}
+
+/* Файлы в сообщениях */
+.file-message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+    min-width: 250px;
+}
+
+.file-icon {
+    font-size: 32px;
+}
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-size {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Ввод сообщения */
+.message-input {
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+}
+
+.input-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: var(--bg-tertiary);
+    border-radius: 24px;
+    padding: 8px 12px;
+}
+
+.input-group input[type="text"] {
+    flex: 1;
+    padding: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 15px;
+}
+
+.input-group input[type="text"]:focus {
+    outline: none;
+}
+
+.input-group button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    padding: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-group button:hover {
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.send-btn {
+    background: var(--accent) !important;
+    color: white !important;
+}
+
+.send-btn:hover {
+    background: var(--accent-hover) !important;
+}
+
+/* Предпросмотр файла */
+.file-preview {
+    margin-top: 10px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-preview-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.file-preview-remove {
+    color: var(--danger);
+    cursor: pointer;
+    padding: 5px;
+}
+
+/* Модальные окна */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    font-size: 22px;
+    color: var(--text-primary);
+}
+
+.close-modal {
+    font-size: 30px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.close-modal:hover {
+    color: var(--danger);
+}
+
+/* Профиль */
+.profile-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.profile-avatar {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.profile-avatar img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--accent);
+}
+
+.edit-avatar-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-name {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.profile-bio {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin-bottom: 20px;
+    padding: 0 20px;
+}
+
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 30px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Группы */
+.group-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.group-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.group-details h2 {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.group-meta {
+    color: var(--text-secondary);
+    font-size: 14px;
+    display: flex;
+    gap: 15px;
+}
+
+.members-list {
+    padding: 15px;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+}
+
+.member-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+}
+
+.member-info {
+    flex: 1;
+}
+
+.member-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.member-role {
+    font-size: 12px;
+    color: var(--accent);
+    background: rgba(0, 168, 132, 0.1);
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.member-role.owner {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.member-role.admin {
+    background: rgba(0, 168, 132, 0.1);
+    color: var(--accent);
+}
+
+.member-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 40vh;
+    }
+
+    .main-content {
+        height: 60vh;
+    }
+
+    .message {
+        max-width: 85%;
+    }
+
+    .auth-container {
+        margin: 20px;
+        padding: 30px 20px;
+    }
+
+    .profile-container {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .message {
+        max-width: 95%;
+    }
+
+    .chat-header {
+        padding: 10px;
+    }
+
+    .message-input {
+        padding: 10px;
+    }
+
+    .input-group {
+        padding: 5px 10px;
+    }
+
+    .modal-content {
+        padding: 20px;
+    }
+}
+
+/* Скроллбар */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Анимации */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Утилиты */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }
+
+.mt-1 { margin-top: 5px; }
+.mt-2 { margin-top: 10px; }
+.mt-3 { margin-top: 15px; }
+.mt-4 { margin-top: 20px; }
+.mt-5 { margin-top: 25px; }
+
+.mb-1 { margin-bottom: 5px; }
+.mb-2 { margin-bottom: 10px; }
+.mb-3 { margin-bottom: 15px; }
+.mb-4 { margin-bottom: 20px; }
+.mb-5 { margin-bottom: 25px; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 5px; }
+.gap-2 { gap: 10px; }
+.gap-3 { gap: 15px; }

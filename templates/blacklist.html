@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Чёрный список - Мессенджер{% endblock %}
+
+{% block content %}
+<style>
+    .app-container, .sidebar, .main-content { display: none; }
+
+    .security-page {
+        min-height: 100vh;
+        background: var(--bg-primary);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+    }
+
+    .security-card {
+        background: var(--bg-secondary);
+        width: 100%;
+        max-width: 560px;
+        min-height: 100vh;
+    }
+
+    .security-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+    }
+
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: background 0.2s;
+    }
+    .back-btn:hover { background: var(--bg-tertiary); }
+
+    .security-header h1 {
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .section {
+        padding: 20px 16px 0;
+    }
+
+    .section-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 12px;
+        padding: 0 4px;
+    }
+
+    .blocked-list {
+        background: var(--bg-tertiary);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .blocked-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.15s;
+    }
+    .blocked-item:last-child { border-bottom: none; }
+
+    .blocked-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        filter: grayscale(60%);
+        opacity: 0.7;
+    }
+
+    .blocked-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .blocked-username {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .blocked-date {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .unblock-btn {
+        width: 34px;
+        height: 34px;
+        background: rgba(239,68,68,.12);
+        border: none;
+        border-radius: 50%;
+        color: #f87171;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.2s, transform 0.15s;
+    }
+    .unblock-btn:hover { background: rgba(239,68,68,.22); transform: scale(1.08); }
+    .unblock-btn:active { transform: scale(0.95); }
+
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: var(--text-muted);
+    }
+    .empty-state svg { opacity: 0.3; margin-bottom: 14px; }
+    .empty-state p { font-size: 14px; }
+
+    @media (max-width: 560px) {
+        .security-card { max-width: 100%; }
+    }
+</style>
+
+<div class="security-page">
+<div class="security-card">
+
+    <div class="security-header">
+        <a href="{{ url_for('security') }}" class="back-btn js-back" title="Назад">
+            <svg width="22" height="22" viewBox="0 0 24 24" class="ico">
+                <use xlink:href="#icon-back"></use>
+            </svg>
+        </a>
+        <h1>Чёрный список</h1>
+    </div>
+
+    <div class="section" style="margin-top: 20px;">
+        <div class="section-title">
+            Заблокированные · {{ blocked_users | length }}
+        </div>
+
+        {% if blocked_users %}
+        <div class="blocked-list" id="blockedList">
+            {% for entry in blocked_users %}
+            <div class="blocked-item" id="blocked-{{ entry.blocked_user.id }}">
+                <img src="{{ uploads_url(entry.blocked_user.avatar) }}"
+                     alt="Avatar"
+                     class="blocked-avatar">
+                <div class="blocked-info">
+                    <div class="blocked-username">{{ entry.blocked_user.username }}</div>
+                    <div class="blocked-date">Заблокирован <span class="local-date" data-utc="{{ entry.created_at.isoformat() }}Z"></span></div>
+                </div>
+                <button class="unblock-btn"
+                        onclick="unblockUser({{ entry.blocked_user.id }}, this)"
+                        title="Разблокировать">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+            </svg>
+            <p>Чёрный список пуст</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+</div>
+
+<script>
+function unblockUser(userId, btn) {
+    if (!confirm('Разблокировать этого пользователя?')) return;
+    btn.disabled = true;
+
+    fetch(`/security/unblock/${userId}`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const item = document.getElementById(`blocked-${userId}`);
+            if (item) {
+                item.style.transition = 'opacity 0.3s, transform 0.3s';
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(30px)';
+                setTimeout(() => {
+                    item.remove();
+                    // обновляем счётчик
+                    const remaining = document.querySelectorAll('.blocked-item').length;
+                    const title = document.querySelector('.section-title');
+                    if (title) title.textContent = `Заблокированные · ${remaining}`;
+                    if (remaining === 0) {
+                        const list = document.getElementById('blockedList');
+                        if (list) {
+                            list.outerHTML = `<div class="empty-state">
+                                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                                </svg><p>Чёрный список пуст</p></div>`;
+                        }
+                    }
+                }, 310);
+            }
+        } else {
+            alert(data.error || 'Ошибка');
+            btn.disabled = false;
+        }
+    })
+    .catch(() => {
+        alert('Ошибка соединения');
+        btn.disabled = false;
+    });
+}
+</script>
+{% endblock %}

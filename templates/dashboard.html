@@ -1,0 +1,693 @@
+{% extends "base.html" %}
+
+{% block title %}Управление — Мессенджер{% endblock %}
+
+{% block content %}
+<style>
+    .app-container, .sidebar, .main-content { display: none; }
+
+    .dash-page {
+        min-height: 100vh;
+        background: var(--bg-primary);
+        display: flex;
+        justify-content: center;
+    }
+
+    .dash-card {
+        background: var(--bg-secondary);
+        width: 100%;
+        max-width: 720px;
+        min-height: 100vh;
+    }
+
+    .dash-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+    }
+
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: background 0.2s;
+    }
+    .back-btn:hover { background: var(--bg-tertiary); }
+
+    .dash-header h1 {
+        font-size: 19px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 20px 16px 0;
+    }
+
+    @media (min-width: 520px) {
+        .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .stat-box {
+        background: var(--bg-tertiary);
+        border-radius: 14px;
+        padding: 16px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent);
+        line-height: 1.1;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+    .section {
+        padding: 24px 16px 32px;
+    }
+
+    .section-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 12px;
+        padding: 0 4px;
+    }
+
+    .search-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .search-input {
+        flex: 1;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 14px;
+        color: var(--text-primary);
+        outline: none;
+    }
+    .search-input:focus { border-color: var(--accent); }
+
+    .user-list {
+        background: var(--bg-tertiary);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .user-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+    }
+    .user-item:last-child { border-bottom: none; }
+
+    .user-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: var(--bg-primary);
+    }
+
+    .user-info { flex: 1; min-width: 0; }
+
+    .user-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .user-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .user-meta.banned { color: #f87171; }
+
+    .user-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+        align-items: center;
+    }
+
+    .ban-select {
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 12px;
+        color: var(--text-primary);
+        max-width: 110px;
+    }
+
+    .btn-ban, .btn-unban {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .btn-ban {
+        background: #f87171;
+        color: #fff;
+    }
+    .btn-ban:hover { opacity: 0.9; }
+    .btn-ban:disabled { opacity: 0.4; cursor: default; }
+
+    .btn-unban {
+        background: var(--accent);
+        color: #fff;
+    }
+    .btn-unban:hover { opacity: 0.9; }
+
+    .empty-msg {
+        padding: 24px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        z-index: 100;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    .dash-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 16px 16px 0;
+    }
+
+    .dash-tab {
+        flex: 1;
+        padding: 12px 14px;
+        border: none;
+        border-radius: 12px;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        position: relative;
+    }
+
+    .dash-tab.active {
+        background: var(--accent);
+        color: #fff;
+    }
+
+    .tab-badge {
+        display: inline-block;
+        min-width: 18px;
+        padding: 1px 6px;
+        margin-left: 6px;
+        border-radius: 10px;
+        background: #f87171;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        vertical-align: middle;
+    }
+
+    .dash-tab.active .tab-badge {
+        background: rgba(255,255,255,0.25);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .report-item {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .report-item:last-child { border-bottom: none; }
+    .report-item:hover { background: rgba(255,255,255,0.03); }
+    .report-item.selected { background: rgba(0,168,132,0.12); border-left: 3px solid var(--accent); }
+
+    .report-preview {
+        font-size: 14px;
+        color: var(--text-primary);
+        margin: 6px 0;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+
+    .report-detail {
+        margin-top: 16px;
+        background: var(--bg-tertiary);
+        border-radius: 16px;
+        padding: 18px;
+        border: 1px solid var(--border);
+    }
+
+    .report-detail-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+
+    .report-detail-text {
+        font-size: 15px;
+        line-height: 1.5;
+        color: var(--text-primary);
+        margin-bottom: 14px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .report-detail-meta {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.6;
+        margin-bottom: 16px;
+    }
+
+    .report-detail-meta a {
+        color: var(--accent);
+        text-decoration: none;
+    }
+
+    .report-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .btn-dismiss {
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-dismiss:hover { background: rgba(255,255,255,0.05); }
+
+    .btn-resolve {
+        padding: 10px 16px;
+        border: none;
+        border-radius: 10px;
+        background: #f87171;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-resolve:hover { opacity: 0.9; }
+</style>
+
+<div class="dash-page">
+<div class="dash-card">
+
+    <div class="dash-header">
+        <a href="{{ url_for('security') }}" class="back-btn js-back" title="Назад">
+            <svg width="22" height="22" viewBox="0 0 24 24" class="ico">
+                <use xlink:href="#icon-back"></use>
+            </svg>
+        </a>
+        <h1>Управление</h1>
+        <a href="{{ url_for('dashboard_bot') }}" style="margin-left:auto;margin-right:8px;padding:8px 14px;background:var(--bg-tertiary);border-radius:10px;color:var(--text-primary);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;">Бот Proton</a>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="stat-value">{{ stats.users }}</div>
+            <div class="stat-label">Пользователей</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">{{ stats.messages }}</div>
+            <div class="stat-label">Сообщений</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">{{ stats.groups }}</div>
+            <div class="stat-label">Групп</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">{{ stats.chats }}</div>
+            <div class="stat-label">Личных чатов</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">{{ stats.online }}</div>
+            <div class="stat-label">Онлайн сейчас</div>
+        </div>
+    </div>
+
+    <div class="dash-tabs">
+        <button type="button" class="dash-tab active" data-tab="users">Пользователи</button>
+        <button type="button" class="dash-tab" data-tab="reports">
+            Жалобы
+            {% if stats.pending_reports %}<span class="tab-badge" id="reportsBadge">{{ stats.pending_reports }}</span>{% else %}<span class="tab-badge" id="reportsBadge" style="display:none">0</span>{% endif %}
+        </button>
+    </div>
+
+    <div class="tab-panel active" id="panel-users">
+    <div class="section">
+        <div class="section-title">Создать пользователя</div>
+        <div class="user-list" style="padding:16px">
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <input type="text" class="search-input" id="cuUsername" placeholder="Username (cool_user)" autocomplete="off">
+                <input type="email" class="search-input" id="cuEmail" placeholder="Email (user@example.com)" autocomplete="off">
+                <input type="password" class="search-input" id="cuPassword" placeholder="Пароль (мин. 8 символов)" autocomplete="new-password">
+                <button type="button" class="btn-ban" style="background:var(--accent);max-width:200px" onclick="createUser()">Создать</button>
+            </div>
+        </div>
+    </div>
+    <div class="section" style="padding-top:0">
+        <div class="section-title">Пользователи</div>
+        <div class="search-row">
+            <input type="text" class="search-input" id="userSearch" placeholder="Поиск по username..." autocomplete="off">
+        </div>
+        <div class="user-list" id="userList">
+            <div class="empty-msg">Загрузка...</div>
+        </div>
+    </div>
+    </div>
+
+    <div class="tab-panel" id="panel-reports">
+    <div class="section">
+        <div class="section-title">Жалобы на сообщения</div>
+        <div class="user-list" id="reportList">
+            <div class="empty-msg">Загрузка...</div>
+        </div>
+        <div id="reportDetail" style="display:none;"></div>
+    </div>
+    </div>
+
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BAN_PERIODS = {{ ban_periods | tojson }};
+let _reports = [];
+let _selectedReportId = null;
+
+document.querySelectorAll('.dash-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.dash-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'reports') loadReports();
+    });
+});
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function periodOptions() {
+    return Object.entries(BAN_PERIODS).map(([k, v]) =>
+        `<option value="${k}">${v.label}</option>`
+    ).join('');
+}
+
+function renderUsers(users) {
+    const list = document.getElementById('userList');
+    if (!users.length) {
+        list.innerHTML = '<div class="empty-msg">Пользователи не найдены</div>';
+        return;
+    }
+    list.innerHTML = users.map(u => {
+        if (u.is_admin) {
+            return `<div class="user-item">
+                <img src="${u.avatar || '/static/icon/favicon.svg'}" class="user-avatar" alt="">
+                <div class="user-info">
+                    <div class="user-name">${escapeHtml(u.username)} <span style="color:var(--accent);font-size:11px;">админ</span></div>
+                    <div class="user-meta">с ${escapeHtml(u.created_at)}</div>
+                </div>
+            </div>`;
+        }
+        if (u.is_banned) {
+            return `<div class="user-item" id="user-${u.id}">
+                <img src="${u.avatar || '/static/icon/favicon.svg'}" class="user-avatar" alt="">
+                <div class="user-info">
+                    <div class="user-name">${escapeHtml(u.username)}</div>
+                    <div class="user-meta banned">заблокирован до ${escapeHtml(u.ban_until)}</div>
+                </div>
+                <div class="user-actions">
+                    <button class="btn-unban" onclick="unbanUser(${u.id})">Разблокировать</button>
+                </div>
+            </div>`;
+        }
+        return `<div class="user-item" id="user-${u.id}">
+            <img src="${u.avatar || '/static/icon/favicon.svg'}" class="user-avatar" alt="">
+            <div class="user-info">
+                <div class="user-name">${escapeHtml(u.username)}</div>
+                <div class="user-meta">с ${escapeHtml(u.created_at)}</div>
+            </div>
+            <div class="user-actions">
+                <select class="ban-select" id="period-${u.id}">${periodOptions()}</select>
+                <button class="btn-ban" onclick="banUser(${u.id})">Заблокировать</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+}
+
+async function loadUsers(q) {
+    const params = q ? `?q=${encodeURIComponent(q)}` : '';
+    try {
+        const r = await fetch('/dashboard/api/users' + params);
+        const d = await r.json();
+        renderUsers(d.users || []);
+    } catch (e) {
+        document.getElementById('userList').innerHTML = '<div class="empty-msg">Ошибка загрузки</div>';
+    }
+}
+
+async function banUser(userId) {
+    const period = document.getElementById('period-' + userId)?.value || '30d';
+    const r = await fetch('/dashboard/ban', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: userId, period})
+    });
+    const d = await r.json();
+    if (d.success) {
+        showToast('Заблокирован на ' + d.period_label);
+        loadUsers(document.getElementById('userSearch').value.trim());
+    } else {
+        showToast(d.error || 'Ошибка');
+    }
+}
+
+async function unbanUser(userId) {
+    const r = await fetch('/dashboard/unban/' + userId, {method: 'POST'});
+    const d = await r.json();
+    if (d.success) {
+        showToast('Пользователь разблокирован');
+        loadUsers(document.getElementById('userSearch').value.trim());
+    } else {
+        showToast(d.error || 'Ошибка');
+    }
+}
+
+async function createUser() {
+    const username = document.getElementById('cuUsername').value.trim();
+    const email = document.getElementById('cuEmail').value.trim();
+    const password = document.getElementById('cuPassword').value;
+    const r = await fetch('/dashboard/create_user', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, email, password})
+    });
+    const d = await r.json();
+    if (d.success) {
+        showToast('Создан: ' + d.username);
+        document.getElementById('cuUsername').value = '';
+        document.getElementById('cuEmail').value = '';
+        document.getElementById('cuPassword').value = '';
+        loadUsers(document.getElementById('userSearch').value.trim());
+    } else {
+        showToast(d.error || 'Ошибка');
+    }
+}
+
+let searchTimer;
+document.getElementById('userSearch').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    const q = this.value.trim();
+    searchTimer = setTimeout(() => loadUsers(q), 300);
+});
+
+loadUsers('');
+
+function updateReportsBadge(count) {
+    const badge = document.getElementById('reportsBadge');
+    if (!badge) return;
+    if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function renderReports() {
+    const list = document.getElementById('reportList');
+    const detail = document.getElementById('reportDetail');
+    if (!_reports.length) {
+        list.innerHTML = '<div class="empty-msg">Нет активных жалоб</div>';
+        detail.style.display = 'none';
+        _selectedReportId = null;
+        return;
+    }
+    list.innerHTML = _reports.map(r => `
+        <div class="report-item${r.id === _selectedReportId ? ' selected' : ''}" onclick="selectReport(${r.id})">
+            <div class="user-meta">${escapeHtml(r.created_at)} · от ${escapeHtml(r.reporter_username)}</div>
+            <div class="report-preview">${escapeHtml(r.message_preview)}</div>
+            <div class="user-meta">Автор: ${escapeHtml(r.author_username)} · ${escapeHtml(r.context)}</div>
+        </div>
+    `).join('');
+    if (_selectedReportId) renderReportDetail();
+}
+
+function renderReportDetail() {
+    const rep = _reports.find(r => r.id === _selectedReportId);
+    const detail = document.getElementById('reportDetail');
+    if (!rep) {
+        detail.style.display = 'none';
+        return;
+    }
+    detail.style.display = 'block';
+    const ctxLink = rep.context_url
+        ? `<a href="${escapeHtml(rep.context_url)}" target="_blank">${escapeHtml(rep.context)}</a>`
+        : escapeHtml(rep.context);
+    detail.innerHTML = `
+        <div class="report-detail">
+            <div class="report-detail-title">Жалоба #${rep.id}</div>
+            <div class="report-detail-text">${escapeHtml(rep.message_preview)}</div>
+            <div class="report-detail-meta">
+                Автор: <strong>${escapeHtml(rep.author_username)}</strong><br>
+                Пожаловался: ${escapeHtml(rep.reporter_username)}<br>
+                Дата: ${escapeHtml(rep.created_at)}<br>
+                Где: ${ctxLink}
+            </div>
+            <div class="report-actions">
+                <button class="btn-dismiss" onclick="dismissReport(${rep.id})">Отклонить</button>
+                <select class="ban-select" id="reportPeriod-${rep.id}">${periodOptions()}</select>
+                <button class="btn-resolve" onclick="resolveReport(${rep.id})">Удовлетворить и заблокировать</button>
+            </div>
+        </div>
+    `;
+}
+
+function selectReport(id) {
+    _selectedReportId = id;
+    renderReports();
+}
+
+async function loadReports() {
+    try {
+        const r = await fetch('/dashboard/api/reports');
+        const d = await r.json();
+        _reports = d.reports || [];
+        if (_selectedReportId && !_reports.find(x => x.id === _selectedReportId)) {
+            _selectedReportId = null;
+        }
+        updateReportsBadge(_reports.length);
+        renderReports();
+    } catch (e) {
+        document.getElementById('reportList').innerHTML = '<div class="empty-msg">Ошибка загрузки</div>';
+    }
+}
+
+async function dismissReport(id) {
+    const r = await fetch('/dashboard/reports/' + id + '/dismiss', { method: 'POST' });
+    const d = await r.json();
+    if (d.success) {
+        showToast('Жалоба закрыта');
+        if (_selectedReportId === id) _selectedReportId = null;
+        loadReports();
+    } else {
+        showToast(d.error || 'Ошибка');
+    }
+}
+
+async function resolveReport(id) {
+    const period = document.getElementById('reportPeriod-' + id)?.value || '30d';
+    const r = await fetch('/dashboard/reports/' + id + '/resolve', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ period })
+    });
+    const d = await r.json();
+    if (d.success) {
+        showToast('Заблокирован на ' + d.period_label);
+        if (_selectedReportId === id) _selectedReportId = null;
+        loadReports();
+    } else {
+        showToast(d.error || 'Ошибка');
+    }
+}
+</script>
+{% endblock %}

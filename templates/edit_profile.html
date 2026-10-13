@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование профиля - Мессенджер{% endblock %}
+
+{% block content %}
+<style>
+    /* Скрываем стандартный лейаут */
+    .app-container, .sidebar, .main-content {
+        display: none;
+    }
+
+    .edit-profile-page {
+        min-height: 100vh;
+        background: var(--bg-primary);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 20px 16px 40px;
+    }
+
+    .edit-profile-card {
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        padding: 32px 28px;
+        width: 100%;
+        max-width: 480px;
+    }
+
+    .edit-profile-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bg-tertiary);
+        border: none;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: background 0.2s;
+    }
+
+    .back-btn:hover {
+        background: var(--bg-hover);
+    }
+
+    .edit-profile-header h1 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    /* Аватар */
+    .avatar-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 28px;
+    }
+
+    .avatar-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .avatar-wrapper img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--accent);
+        display: block;
+    }
+
+    .avatar-edit-label {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        background: var(--accent);
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        transition: transform 0.2s;
+    }
+
+    .avatar-edit-label:hover {
+        transform: scale(1.1);
+    }
+
+    .avatar-hint {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .avatar-delete-btn {
+        margin-top: 12px;
+        padding: 8px 16px;
+        border-radius: 10px;
+        border: 1.5px solid var(--border);
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 13px;
+        cursor: pointer;
+        transition: color 0.2s, border-color 0.2s;
+    }
+
+    .avatar-delete-btn:hover {
+        color: var(--error, #e55);
+        border-color: var(--error, #e55);
+    }
+
+    /* Форм-группы */
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 8px;
+    }
+
+    .form-group input[type="text"],
+    .form-group textarea {
+        width: 100%;
+        padding: 14px 16px;
+        background: var(--bg-tertiary);
+        border: 1.5px solid var(--border);
+        border-radius: 14px;
+        color: var(--text-primary);
+        font-size: 15px;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    .form-group input[type="text"]:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    /* Кнопки */
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 14px 16px;
+        border-radius: 14px;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .btn:active {
+        transform: scale(0.97);
+    }
+
+    .btn-primary {
+        background: var(--accent);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.9;
+    }
+
+    .btn-secondary {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+        background: var(--bg-hover);
+    }
+
+    /* Мобильная адаптация */
+    @media (max-width: 520px) {
+        .edit-profile-page {
+            padding: 0;
+            align-items: stretch;
+        }
+
+        .edit-profile-card {
+            border-radius: 0;
+            min-height: 100vh;
+            padding: 20px 16px 32px;
+        }
+    }
+</style>
+
+<div class="edit-profile-page">
+    <div class="edit-profile-card">
+
+        <div class="edit-profile-header">
+            <a href="{{ url_for('profile', user_id=current_user.id) }}" class="back-btn js-back" title="Назад">
+                <svg width="22" height="22" viewBox="0 0 24 24" class="ico">
+                    <use xlink:href="#icon-back"></use>
+                </svg>
+            </a>
+            <h1>Редактировать профиль</h1>
+        </div>
+
+        <form id="profileForm" enctype="multipart/form-data">
+            <!-- Аватар -->
+            <div class="avatar-section">
+                <div class="avatar-wrapper">
+                    <img src="{{ uploads_url(current_user.avatar) }}"
+                         alt="Avatar"
+                         id="avatarPreview">
+                    <label for="avatarInput" class="avatar-edit-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </label>
+                    <input type="file" name="avatar" id="avatarInput" accept="image/*" style="display:none;">
+                </div>
+                <p class="avatar-hint">Рекомендуемый размер: 500×500px</p>
+                {% if is_custom_upload(current_user.avatar) %}
+                <button type="button" class="avatar-delete-btn" id="deleteAvatarBtn">
+                    Удалить фото
+                </button>
+                {% endif %}
+            </div>
+
+            <!-- Имя -->
+            <div class="form-group">
+                <label>Имя пользователя</label>
+                <input type="text" name="username" id="usernameInput" value="{{ current_user.username }}" required minlength="5" autocomplete="off">
+                <span id="usernameError" style="display:none; color: var(--error, #e55); font-size: 13px; margin-top: 6px; display: none;">
+                    Минимум 5 символов
+                </span>
+            </div>
+
+            <!-- Био -->
+            <div class="form-group">
+                <label style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>О себе</span>
+                    <span id="bioCounter" style="font-size: 12px; color: var(--text-muted); font-weight: 400; text-transform: none; letter-spacing: 0;">0 / 150</span>
+                </label>
+                <textarea name="bio" id="bioInput" maxlength="150" placeholder="Расскажите немного о себе...">{{ current_user.bio }}</textarea>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" class="ico">
+                        <use xlink:href="#icon-check"></use>
+                    </svg>
+                    Сохранить
+                </button>
+                <a href="{{ url_for('profile', user_id=current_user.id) }}" class="btn btn-secondary">
+                    Отмена
+                </a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+    // Счётчик символов Bio
+    const bioInput = document.getElementById('bioInput');
+    const bioCounter = document.getElementById('bioCounter');
+
+    function updateBioCounter() {
+        const len = bioInput.value.length;
+        bioCounter.textContent = len + ' / 150';
+        bioCounter.style.color = len >= 140 ? (len >= 150 ? 'var(--error, #e55)' : '#f0a500') : 'var(--text-muted)';
+    }
+    updateBioCounter();
+    bioInput.addEventListener('input', updateBioCounter);
+
+    // Предпросмотр аватара
+    document.getElementById('avatarInput').addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('avatarPreview').src = e.target.result;
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    const deleteAvatarBtn = document.getElementById('deleteAvatarBtn');
+    if (deleteAvatarBtn) {
+        deleteAvatarBtn.addEventListener('click', function() {
+            if (!confirm('Удалить своё фото? Будет создана аватарка с буквой.')) return;
+            fetch('{{ url_for("delete_avatar") }}', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('avatarPreview').src = data.avatar + '?t=' + Date.now();
+                        deleteAvatarBtn.remove();
+                    } else {
+                        alert(data.error || 'Ошибка');
+                    }
+                })
+                .catch(() => alert('Ошибка'));
+        });
+    }
+
+    // Валидация username
+    const usernameInput = document.getElementById('usernameInput');
+    const usernameError = document.getElementById('usernameError');
+
+    usernameInput.addEventListener('input', function() {
+        if (this.value.length > 0 && this.value.length < 5) {
+            usernameError.style.display = 'block';
+            this.style.borderColor = 'var(--error, #e55)';
+        } else {
+            usernameError.style.display = 'none';
+            this.style.borderColor = '';
+        }
+    });
+
+    // Сохранение профиля
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        if (usernameInput.value.length < 5) {
+            usernameError.style.display = 'block';
+            usernameInput.style.borderColor = 'var(--error, #e55)';
+            usernameInput.focus();
+            return;
+        }
+
+        const formData = new FormData(this);
+
+        fetch('{{ url_for("edit_profile") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (data.avatar) {
+                    document.getElementById('avatarPreview').src = data.avatar + '?t=' + Date.now();
+                }
+                window.location.href = '{{ url_for("profile", user_id=current_user.id) }}';
+            } else {
+                alert(data.error || 'Ошибка при сохранении');
+            }
+        })
+        .catch(() => alert('Ошибка при сохранении'));
+    });
+</script>
+{% endblock %}

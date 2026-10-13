@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}Мои устройства - Мессенджер{% endblock %}
+
+{% block content %}
+<style>
+    .app-container, .sidebar, .main-content { display: none; }
+
+    .security-page {
+        min-height: 100vh;
+        background: var(--bg-primary);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+    }
+
+    .security-card {
+        background: var(--bg-secondary);
+        width: 100%;
+        max-width: 560px;
+        min-height: 100vh;
+    }
+
+    .security-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+    }
+
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: background 0.2s;
+    }
+    .back-btn:hover { background: var(--bg-tertiary); }
+
+    .security-header h1 {
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .section {
+        padding: 20px 16px 0;
+    }
+
+    .section-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 12px;
+        padding: 0 4px;
+    }
+
+    .section-card {
+        background: var(--bg-tertiary);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 12px;
+    }
+
+    /* Сессии */
+    .session-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.15s;
+        position: relative;
+    }
+    .session-item:last-child { border-bottom: none; }
+    .session-item.current-session { background: rgba(0,168,132, 0.07); }
+
+    .device-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: var(--text-secondary);
+    }
+    .device-icon.current { color: var(--accent); }
+
+    .session-info { flex: 1; min-width: 0; }
+
+    .session-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 3px;
+    }
+
+    .session-browser {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .session-current-badge {
+        background: var(--accent);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .session-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+    .session-meta span { display: block; }
+
+    .terminate-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 6px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: color 0.2s, background 0.2s;
+        margin-top: 2px;
+    }
+    .terminate-btn:hover { color: #f87171; background: rgba(239,68,68,.12); }
+
+    .terminate-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    /* Подсказка о 24 часах */
+    .notice-box {
+        background: rgba(251,146,60,.1);
+        border: 1px solid rgba(251,146,60,.3);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 13px;
+        color: #fb923c;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .notice-box svg { flex-shrink: 0; margin-top: 1px; }
+
+    .terminate-all-btn {
+        width: calc(100% - 32px);
+        margin: 12px 16px 16px;
+        padding: 13px;
+        background: transparent;
+        border: 1.5px solid rgba(239,68,68,.4);
+        border-radius: 12px;
+        color: #f87171;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        font-family: inherit;
+    }
+    .terminate-all-btn:hover { background: rgba(239,68,68,.1); border-color: #f87171; }
+
+    .sessions-empty {
+        text-align: center;
+        padding: 30px 20px;
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+
+    .locked-badge {
+        background: rgba(251,146,60,.15);
+        color: #fb923c;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 560px) {
+        .security-card { max-width: 100%; }
+    }
+</style>
+
+<div class="security-page">
+<div class="security-card">
+
+    <div class="security-header">
+        <a href="{{ url_for('security') }}" class="back-btn js-back" title="Назад">
+            <svg width="22" height="22" viewBox="0 0 24 24" class="ico">
+                <use xlink:href="#icon-back"></use>
+            </svg>
+        </a>
+        <h1>Мои устройства</h1>
+    </div>
+
+    <div class="section" style="margin-top: 20px;">
+
+        {% if account_too_new %}
+        <div class="notice-box">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>Управление устройствами будет доступно через 24 часа после входа на этом устройстве для вашей безопасности.</span>
+        </div>
+        {% endif %}
+
+        <div class="section-title">Активные устройства</div>
+        <div class="section-card" id="sessionsList">
+            {% if sessions %}
+                {% for s in sessions %}
+                <div class="session-item {% if s.is_current %}current-session{% endif %}"
+                     id="session-{{ s.id }}">
+
+                    <div class="device-icon {% if s.is_current %}current{% endif %}">
+                        {% if s.device_type == 'mobile' %}
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                            <line x1="12" y1="18" x2="12.01" y2="18"/>
+                        </svg>
+                        {% elif s.device_type == 'tablet' %}
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                            <line x1="12" y1="18" x2="12.01" y2="18"/>
+                        </svg>
+                        {% else %}
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+
+                    <div class="session-info">
+                        <div class="session-top">
+                            <span class="session-browser">{{ s.browser or 'Неизвестный браузер' }}</span>
+                            {% if s.is_current %}
+                            <span class="session-current-badge">Это устройство</span>
+                            {% elif s.terminate_locked %}
+                            <span class="locked-badge">🔒 Заблокировано</span>
+                            {% endif %}
+                        </div>
+                        <div class="session-meta">
+                            <span>{{ s.os or 'ОС неизвестна' }}</span>
+                            <span>IP: {{ s.ip_address or '—' }}</span>
+                            <span>🟢 Активна · {{ s.last_active_str() }}</span>
+                            <span>Вход: <span class="local-datetime" data-utc="{{ s.created_at.isoformat() }}Z"></span></span>
+                        </div>
+                    </div>
+
+                    {% if s.is_active and not s.is_current %}
+                    <button class="terminate-btn"
+                            onclick="terminateSession({{ s.id }}, this)"
+                            {% if s.terminate_locked %}disabled title="Доступно через 24 ч. после входа"{% else %}title="Завершить сессию"{% endif %}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="sessions-empty">Нет активных устройств</div>
+            {% endif %}
+        </div>
+
+        {% if sessions | length > 1 %}
+        <button class="terminate-all-btn" onclick="terminateAllSessions()">
+            Завершить все другие сессии
+        </button>
+        {% endif %}
+
+    </div>
+
+</div>
+</div>
+
+<script>
+function terminateSession(sessionId, btn) {
+    if (!confirm('Завершить эту сессию?')) return;
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+
+    fetch(`/security/terminate_session/${sessionId}`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const item = document.getElementById(`session-${sessionId}`);
+            if (item) {
+                item.style.transition = 'opacity 0.35s, transform 0.35s';
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(40px)';
+                setTimeout(() => {
+                    item.style.maxHeight = item.offsetHeight + 'px';
+                    item.style.overflow = 'hidden';
+                    setTimeout(() => { item.style.maxHeight = '0'; item.style.padding = '0'; }, 50);
+                    setTimeout(() => item.remove(), 400);
+                }, 300);
+            }
+        } else {
+            alert(data.error || 'Ошибка при завершении сессии');
+            btn.disabled = false;
+            btn.style.opacity = '';
+        }
+    })
+    .catch(err => {
+        alert('Ошибка: ' + err.message);
+        btn.disabled = false;
+        btn.style.opacity = '';
+    });
+}
+
+function terminateAllSessions() {
+    const others = document.querySelectorAll('.session-item:not(.current-session)');
+    if (others.length === 0) { alert('Нет других активных сессий.'); return; }
+    if (!confirm(`Завершить ${others.length} других сессий?`)) return;
+
+    const btn = document.querySelector('.terminate-all-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Завершаем...'; }
+
+    fetch('/security/terminate_all_sessions', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            others.forEach((el, i) => {
+                setTimeout(() => {
+                    el.style.transition = 'opacity 0.3s, transform 0.3s';
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateX(30px)';
+                    setTimeout(() => el.remove(), 310);
+                }, i * 80);
+            });
+            setTimeout(() => {
+                const allBtn = document.querySelector('.terminate-all-btn');
+                if (allBtn) allBtn.remove();
+            }, others.length * 80 + 400);
+        } else {
+            alert(data.error || 'Ошибка');
+            if (btn) { btn.disabled = false; btn.textContent = 'Завершить все другие сессии'; }
+        }
+    })
+    .catch(err => {
+        alert('Ошибка соединения: ' + err.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Завершить все другие сессии'; }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1624 @@
+{% extends "base.html" %}
+
+{% block title %}Чаты - Мессенджер{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/desktop_sidebar.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="tg-desktop">
+{% include "_desktop_sidebar.html" %}
+<div class="ds-content">
+<div class="ds-welcome">
+    <svg width="80" height="80" viewBox="0 0 24 24" class="ico" style="color: var(--accent); opacity: 0.85;">
+        <use xlink:href="#icon-chat"></use>
+    </svg>
+    <h2>Выберите чат</h2>
+    <p style="font-size: 14px;">Нажмите на чат слева, чтобы начать общение</p>
+</div>
+</div>{# /ds-content #}
+</div>{# /tg-desktop #}
+
+<div class="mobile-layout chats-fullscreen">
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html, body {
+        height: 100%;
+        width: 100%;
+        background: var(--bg-primary);
+    }
+
+    body {
+        display: block;
+        overflow: hidden;
+    }
+
+    .chats-fullscreen {
+        width: 100vw;
+        height: 100vh;
+        background: var(--bg-secondary);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+
+    /* =====================
+       ШАПКА
+    ===================== */
+    .chats-header {
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        height: 56px;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .burger-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 5px;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+
+    .burger-btn:hover {
+        background: var(--bg-tertiary);
+    }
+
+    .burger-btn span {
+        display: block;
+        width: 20px;
+        height: 2px;
+        background: var(--text-primary);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    .header-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    /* =====================
+       БОКОВОЕ МЕНЮ (DRAWER)
+    ===================== */
+    .drawer-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 3000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .drawer-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 280px;
+        height: 100%;
+        background: var(--bg-secondary);
+        z-index: 3100;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .drawer.active {
+        transform: translateX(0);
+    }
+
+    .drawer-profile {
+        padding: 30px 20px 24px;
+        background: var(--accent);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .drawer-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .drawer-username {
+        font-size: 17px;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .drawer-status {
+        font-size: 13px;
+        color: rgba(255,255,255,0.75);
+    }
+
+    .drawer-menu {
+        flex: 1;
+        padding: 10px 0;
+        overflow-y: auto;
+    }
+
+    .drawer-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 20px;
+        cursor: pointer;
+        transition: background 0.15s;
+        text-decoration: none;
+        color: var(--text-primary);
+        font-size: 15px;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+    }
+
+    .drawer-menu-item:hover {
+        background: var(--bg-hover);
+    }
+
+    .drawer-menu-item svg {
+        opacity: 0.7;
+        flex-shrink: 0;
+    }
+
+    .drawer-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 8px 0;
+    }
+
+    /* =====================
+       ПОИСК
+    ===================== */
+    .search-bar {
+        padding: 8px 14px;
+        background: var(--bg-tertiary);
+        margin: 10px 12px;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .search-bar span {
+        color: var(--text-muted);
+    }
+
+    .search-bar input {
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        width: 100%;
+        font-size: 15px;
+    }
+
+    .search-bar input::placeholder {
+        color: var(--text-muted);
+    }
+
+    .search-bar input:focus {
+        outline: none;
+    }
+
+    /* =====================
+       ЗАГОЛОВОК СПИСКА
+    ===================== */
+    .chats-title {
+        padding: 0 15px 10px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    .chats-title span {
+        padding: 10px 0;
+        color: var(--accent);
+        border-bottom: 2px solid var(--accent);
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    /* =====================
+       СПИСОК ЧАТОВ
+    ===================== */
+    .chats-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px 15px;
+        background: var(--bg-secondary);
+    }
+
+    .chat-item-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+        border: 1px solid transparent;
+        transition: var(--transition);
+    }
+
+    .chat-item-wrapper:hover {
+        border-color: var(--accent);
+        background: var(--bg-hover);
+    }
+
+    .chat-item {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        text-decoration: none;
+        color: var(--text-primary);
+    }
+
+    .chat-avatar {
+        position: relative;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+
+    .chat-avatar img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .saved-chat-avatar-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .chat-avatar .status {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid var(--bg-tertiary);
+    }
+
+    .status.online { background: var(--success); }
+    .status.offline { background: var(--text-muted); }
+
+    .unread-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: var(--accent);
+        color: white;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        font-size: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        border: 2px solid var(--bg-tertiary);
+    }
+
+    .chat-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .chat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+
+    .chat-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 0;
+    }
+
+    .chat-time {
+        font-size: 11px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        margin-left: 8px;
+    }
+
+    .chat-preview {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chat-preview p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 0;
+        max-width: 200px;
+    }
+
+    .you-label, .sender-label {
+        color: var(--text-muted);
+    }
+
+    .chat-badge {
+        background: var(--accent);
+        color: white;
+        border-radius: 12px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-left: 8px;
+        white-space: nowrap;
+    }
+
+    .delete-chat-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 18px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.7;
+        margin-right: 12px;
+    }
+
+    .delete-chat-btn:hover {
+        background: var(--danger-bg);
+        color: var(--danger);
+        opacity: 1;
+    }
+
+    .chat-item-wrapper:hover .delete-chat-btn {
+        opacity: 1;
+    }
+
+    .empty-chats {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        display: block;
+        margin-bottom: 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-chats h3 {
+        margin-bottom: 10px;
+        color: var(--text-primary);
+    }
+
+    /* =====================
+       FAB - КНОПКА КАРАНДАШ
+    ===================== */
+    .fab-btn {
+        position: fixed;
+        bottom: 24px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+        z-index: 500;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        color: #fff;
+    }
+
+    .fab-btn:hover {
+        transform: scale(1.08);
+        box-shadow: 0 6px 22px rgba(0,0,0,0.4);
+    }
+
+    .fab-btn:active {
+        transform: scale(0.95);
+    }
+
+    /* =====================
+       BOTTOM SHEET (ЧТО СОЗДАТЬ)
+    ===================== */
+    .sheet-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .sheet-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .bottom-sheet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--bg-secondary);
+        border-radius: 20px 20px 0 0;
+        z-index: 1100;
+        transform: translateY(100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .bottom-sheet.active {
+        transform: translateY(0);
+    }
+
+    .sheet-handle {
+        width: 36px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        margin: 10px auto 0;
+    }
+
+    .sheet-title {
+        padding: 16px 20px 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .sheet-items {
+        padding: 0 8px 16px;
+    }
+
+    .sheet-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+        color: var(--text-primary);
+        font-size: 15px;
+        transition: background 0.15s;
+    }
+
+    .sheet-item:hover {
+        background: var(--bg-tertiary);
+    }
+
+    .sheet-item-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .sheet-item-icon.purple { background: #8b5cf6; }
+    .sheet-item-icon.blue   { background: #3b82f6; }
+    .sheet-item-icon.green  { background: #10b981; }
+
+    .sheet-item-label {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .sheet-item-label span:first-child {
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .sheet-item-label span:last-child {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    /* =====================
+       СТАНДАРТНЫЕ МОДАЛКИ
+    ===================== */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        padding: 30px;
+        max-width: 450px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+        font-size: 22px;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .close-modal {
+        font-size: 30px;
+        color: var(--text-muted);
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .close-modal:hover {
+        color: var(--danger);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 14px 16px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 15px;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .modal-actions button {
+        flex: 1;
+    }
+
+    .btn {
+        padding: 12px 16px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-secondary {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+        background: var(--bg-hover);
+    }
+
+    /* Анимации уведомлений */
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to   { transform: translateX(0);    opacity: 1; }
+    }
+
+    @keyframes slideOut {
+        from { transform: translateX(0);    opacity: 1; }
+        to   { transform: translateX(100%); opacity: 0; }
+    }
+
+    /* Скрываем стандартный лейаут */
+    .app-container,
+    .sidebar,
+    .main-content {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .chats-header { padding: 10px 14px; }
+        .search-bar   { margin: 8px 12px; }
+        .chats-list   { padding: 10px 12px; }
+        .chat-preview p { max-width: 150px; }
+        .delete-chat-btn { opacity: 1; }
+    }
+    </style>
+
+    <!-- ===== DRAWER OVERLAY ===== -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+    <!-- ===== БОКОВОЕ МЕНЮ ===== -->
+    <div class="drawer" id="drawer">
+        <div class="drawer-profile">
+            <img src="{{ uploads_url(current_user.avatar) }}"
+                 alt="Avatar"
+                 class="drawer-avatar">
+            <div class="drawer-username">{{ current_user.username }}</div>
+            <div class="drawer-status">Онлайн</div>
+        </div>
+
+        <nav class="drawer-menu">
+            <a href="{{ url_for('profile', user_id=current_user.id) }}" class="drawer-menu-item">
+                <span class="ico-box blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-profile"></use></svg>
+                </span>
+                Профиль
+            </a>
+
+            <a href="{{ url_for('security') }}" class="drawer-menu-item">
+                <span class="ico-box green">
+                    <svg width="20" height="20" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-shield"></use></svg>
+                </span>
+                Безопасность
+            </a>
+
+            <a href="{{ url_for('contacts') }}" class="drawer-menu-item">
+                <span class="ico-box purple">
+                    <svg width="20" height="20" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-group"></use></svg>
+                </span>
+                Контакты
+            </a>
+
+            <div class="drawer-divider"></div>
+
+            <a href="{{ url_for('logout') }}" class="drawer-menu-item" style="color: var(--danger, #e53e3e);">
+                <span class="ico-box red">
+                    <svg width="20" height="20" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-logout"></use></svg>
+                </span>
+                Выйти
+            </a>
+        </nav>
+    </div>
+
+    <!-- ===== ШАПКА ===== -->
+    <div class="chats-header">
+        <div class="header-left">
+            <button class="burger-btn" onclick="openDrawer()" title="Меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <span class="header-title">Чаты</span>
+        </div>
+    </div>
+
+    <!-- ===== ПОИСК ===== -->
+    <div class="search-bar">
+        <svg width="18" height="18" viewBox="0 0 24 24" class="ico">
+            <use xlink:href="#icon-search"></use>
+        </svg>
+        <input type="text" placeholder="Поиск" id="searchInput" autocomplete="off">
+    </div>
+
+    <!-- ===== ЗАГОЛОВОК СПИСКА ===== -->
+    <div class="chats-title">
+        <span>Все чаты</span>
+    </div>
+
+    <!-- ===== СПИСОК ЧАТОВ ===== -->
+    <div class="chats-list" id="chatsList">
+        {% if chats %}
+            {% for chat in chats %}
+                {% if chat.type == 'saved' %}
+                <div class="chat-item-wrapper" data-chat-id="{{ chat.id }}" data-type="saved">
+                    <a href="{{ url_for('chat', chat_id=chat.id) }}" class="chat-item">
+                        <div class="chat-avatar saved-chat-avatar-wrap">
+                            <div class="saved-chat-avatar-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-bookmark"></use></svg>
+                            </div>
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-header">
+                                <h3>Избранное</h3>
+                                <span class="chat-time" data-utc="{{ chat.last_message_ts }}"></span>
+                            </div>
+                            <div class="chat-preview">
+                                <p>
+                                    {% if chat.last_message %}
+                                        {% if chat.last_message.content %}
+                                            {{ chat.last_message.content[:30] }}
+                                        {% elif chat.last_message.image_path %}
+                                            <svg width="16" height="16" viewBox="0 0 24 24" class="ico" style="vertical-align: middle; margin-right: 4px;"><use xlink:href="#icon-image"></use></svg>
+                                            Фото
+                                        {% elif chat.last_message.file_path %}
+                                            <svg width="16" height="16" viewBox="0 0 24 24" class="ico" style="vertical-align: middle; margin-right: 4px;"><use xlink:href="#icon-file"></use></svg>
+                                            {{ chat.last_message.file_name[:20] if chat.last_message.file_name else 'Файл' }}
+                                        {% endif %}
+                                    {% else %}
+                                        Нет сообщений
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% elif chat.type == 'private' %}
+                <div class="chat-item-wrapper" data-chat-id="{{ chat.id }}" data-type="private">
+                    <a href="{{ url_for('chat', chat_id=chat.id) }}" class="chat-item">
+                        <div class="chat-avatar">
+                            <img src="{{ uploads_url(chat.other_user.avatar) }}"
+                                 alt="Avatar">
+                            <span class="status {{ chat.other_user.status }}"></span>
+                            {% if chat.unread_count > 0 %}
+                            <span class="unread-badge">{{ chat.unread_count }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-header">
+                                <h3>{{ chat.other_user.display_name }}</h3>
+                                <span class="chat-time" data-utc="{{ chat.last_message_ts }}"></span>
+                            </div>
+                            <div class="chat-preview">
+                                <p>
+                                    {% if chat.last_message %}
+                                        {% if chat.last_message.sender_id == current_user.id %}
+                                            <span class="you-label">Вы: </span>
+                                        {% endif %}
+                                        {% if chat.last_message.content %}
+                                            {{ chat.last_message.content[:30] }}
+                                        {% elif chat.last_message.image_path %}
+                                            <svg width="16" height="16" viewBox="0 0 24 24" class="ico" style="vertical-align: middle; margin-right: 4px;"><use xlink:href="#icon-image"></use></svg>
+                                            Фото
+                                        {% elif chat.last_message.file_path %}
+                                            <svg width="16" height="16" viewBox="0 0 24 24" class="ico" style="vertical-align: middle; margin-right: 4px;"><use xlink:href="#icon-file"></use></svg>
+                                            {{ chat.last_message.file_name[:20] if chat.last_message.file_name else 'Файл' }}
+                                        {% endif %}
+                                    {% else %}
+                                        Нет сообщений
+                                    {% endif %}
+                                </p>
+                                {% if chat.unread_count > 0 %}
+                                <span class="chat-badge">{{ chat.unread_count }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% elif chat.type == 'group' %}
+                <div class="chat-item-wrapper" data-chat-id="{{ chat.id }}" data-type="group">
+                    <a href="{{ url_for('group_chat', group_id=chat.id) }}" class="chat-item">
+                        <div class="chat-avatar">
+                            <img src="{{ uploads_url(chat.group.icon) }}"
+                                 alt="Group">
+                            {% if chat.unread_count > 0 %}
+                            <span class="unread-badge">{{ chat.unread_count }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-header">
+                                <h3>{{ chat.group.name }}</h3>
+                                <span class="chat-time" data-utc="{{ chat.last_message_ts }}"></span>
+                            </div>
+                            <div class="chat-preview">
+                                <p>
+                                    {% if chat.last_message %}
+                                        {% if chat.last_message.sender_id == current_user.id %}
+                                            <span class="you-label">Вы: </span>
+                                        {% else %}
+                                            <span class="sender-label">{{ chat.last_message.sender.display_name if chat.last_message.sender else 'Пользователь' }}: </span>
+                                        {% endif %}
+                                        {% if chat.last_message.content %}
+                                            {{ chat.last_message.content[:30] }}
+                                        {% elif chat.last_message.image_path %}
+                                            <svg width="16" height="16" viewBox="0 0 24 24" class="ico" style="vertical-align: middle; margin-right: 4px;"><use xlink:href="#icon-image"></use></svg>
+                                            Фото
+                                        {% elif chat.last_message.file_path %}
+                                            <svg width="16" height="16" viewBox="0 0 24 24" class="ico" style="vertical-align: middle; margin-right: 4px;"><use xlink:href="#icon-file"></use></svg>
+                                            {{ chat.last_message.file_name[:20] if chat.last_message.file_name else 'Файл' }}
+                                        {% endif %}
+                                    {% else %}
+                                        Нет сообщений
+                                    {% endif %}
+                                </p>
+                                {% if chat.unread_count > 0 %}
+                                <span class="chat-badge">{{ chat.unread_count }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="empty-chats">
+                <span class="empty-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" class="ico">
+                        <use xlink:href="#icon-chat"></use>
+                    </svg>
+                </span>
+                <h3>Нет чатов</h3>
+                <p>Нажмите карандаш, чтобы начать общение</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- ===== FAB КНОПКА КАРАНДАШ ===== -->
+    <button class="fab-btn" onclick="openSheet()" title="Новый чат">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+    </button>
+
+    <!-- ===== SHEET OVERLAY ===== -->
+    <div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+
+    <!-- ===== BOTTOM SHEET (ЧТО СОЗДАТЬ) ===== -->
+    <div class="bottom-sheet" id="bottomSheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Создать</div>
+        <div class="sheet-items">
+            <button class="sheet-item" onclick="closeSheet(); showNewChatForm();">
+                <div class="sheet-item-icon blue">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <div class="sheet-item-label">
+                    <span>Личный чат</span>
+                    <span>Напишите любому пользователю</span>
+                </div>
+            </button>
+
+            <button class="sheet-item" onclick="closeSheet(); showCreateGroupModal();">
+                <div class="sheet-item-icon purple">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div class="sheet-item-label">
+                    <span>Группа</span>
+                    <span>Чат для нескольких участников</span>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== МОДАЛКА: НОВЫЙ ЧАТ ===== -->
+<div class="modal" id="newChatModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" class="ico" style="margin-right: 10px;">
+                    <use xlink:href="#icon-chat"></use>
+                </svg>
+                Новый личный чат
+            </h2>
+            <span class="close-modal" onclick="hideNewChatForm()">&times;</span>
+        </div>
+        <form method="POST" action="{{ url_for('start_chat') }}">
+            <div class="form-group">
+                <label>Имя пользователя</label>
+                <input type="text" name="username" placeholder="Введите username" required>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideNewChatForm()">Отмена</button>
+                <button type="submit" class="btn">Начать чат</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===== МОДАЛКА: СОЗДАНИЕ ГРУППЫ ===== -->
+<div class="modal" id="createGroupModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" style="margin-right: 10px;">
+                    <use xlink:href="#icon-group"></use>
+                </svg>
+                Создать группу
+            </h2>
+            <span class="close-modal" onclick="hideCreateGroupModal()">&times;</span>
+        </div>
+        <form id="createGroupForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Название группы</label>
+                <input type="text" name="name" placeholder="Например: Друзья" required>
+            </div>
+            <div class="form-group">
+                <label>Описание</label>
+                <textarea name="description" placeholder="Опишите тему группы..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Юзернейм группы <span style="color:var(--text-secondary);font-weight:400;">(необязательно)</span></label>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="color:var(--text-secondary);font-size:15px;">@</span>
+                    <input type="text" name="group_username" placeholder="my_group"
+                           pattern="[A-Za-z0-9_]+" maxlength="50" style="flex:1;">
+                </div>
+                <small style="color:var(--text-secondary);">Буквы, цифры, _. По нему можно вступить: /g/username</small>
+            </div>
+            <div class="form-group">
+                <label>Видимость</label>
+                <div style="display:flex;gap:8px;">
+                    <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-tertiary);border-radius:10px;cursor:pointer;border:2px solid transparent;" id="cg-vis-private-lbl">
+                        <input type="radio" name="visibility" value="private" checked onchange="cgUpdateVisUI()" style="accent-color:var(--accent);">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;">🔒 Приватная</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Только по ссылке</div>
+                        </div>
+                    </label>
+                    <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-tertiary);border-radius:10px;cursor:pointer;border:2px solid transparent;" id="cg-vis-public-lbl">
+                        <input type="radio" name="visibility" value="public" onchange="cgUpdateVisUI()" style="accent-color:var(--accent);">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;">🌐 Публичная</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Видна в поиске</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Тип вступления</label>
+                <div style="display:flex;gap:8px;">
+                    <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-tertiary);border-radius:10px;cursor:pointer;border:2px solid transparent;" id="cg-jt-open-lbl">
+                        <input type="radio" name="join_type" value="open" checked onchange="cgUpdateJtUI()" style="accent-color:var(--accent);">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;">✅ Открытая</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Вступить сразу</div>
+                        </div>
+                    </label>
+                    <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-tertiary);border-radius:10px;cursor:pointer;border:2px solid transparent;" id="cg-jt-request-lbl">
+                        <input type="radio" name="join_type" value="request" onchange="cgUpdateJtUI()" style="accent-color:var(--accent);">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;">📋 По заявке</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Админ одобряет</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Иконка группы</label>
+                <input type="file" name="icon" accept="image/*">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideCreateGroupModal()">Отмена</button>
+                <button type="submit" class="btn">Создать группу</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    /* ===== КОНТЕКСТНОЕ МЕНЮ ЧАТОВ (ПКМ / долгое удержание) ===== */
+    let _chatCtxMenu = null;
+    let _chatLongTimer = null;
+    let _chatLongTarget = null;
+
+    function createChatContextMenu() {
+        if (_chatCtxMenu) return _chatCtxMenu;
+        const el = document.createElement('div');
+        el.id = 'chatContextMenu';
+        el.style.cssText = `
+            position: fixed; background: var(--bg-secondary); border-radius: 12px;
+            padding: 6px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); z-index: 9999;
+            display: none; flex-direction: column; gap: 2px; min-width: 180px;
+            border: 1px solid var(--border);
+        `;
+        document.body.appendChild(el);
+        _chatCtxMenu = el;
+        return el;
+    }
+
+    function showChatContextMenu(e, wrapperEl) {
+        const chatId = wrapperEl.dataset.chatId;
+        const chatType = wrapperEl.dataset.type;
+        if (chatType !== 'private' || !chatId) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const nameEl = wrapperEl.querySelector('h3');
+        const chatName = nameEl ? nameEl.textContent.trim() : 'чат';
+
+        const menu = createChatContextMenu();
+        menu.innerHTML = `
+            <button onclick="hideChatContextMenu(); deleteChat(${chatId}, '${chatName.replace(/'/g, "\\'")}')"
+                style="background:transparent;border:none;color:var(--danger);font-size:14px;padding:10px 14px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left;width:100%;transition:background 0.15s;"
+                onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+                <svg width="18" height="18" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-delete"></use></svg>
+                <span>Удалить чат</span>
+            </button>
+        `;
+
+        menu.style.display = 'flex';
+        const menuW = 190, menuH = 52;
+        let x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : window.innerWidth / 2);
+        let y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : window.innerHeight / 2);
+        if (x + menuW > window.innerWidth) x = window.innerWidth - menuW - 8;
+        if (y + menuH > window.innerHeight) y = window.innerHeight - menuH - 8;
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+    }
+
+    function hideChatContextMenu() {
+        if (_chatCtxMenu) _chatCtxMenu.style.display = 'none';
+    }
+
+    // Делегирование — ПКМ
+    document.addEventListener('contextmenu', e => {
+        const wrapper = e.target.closest('.chat-item-wrapper[data-type="private"]');
+        if (wrapper) showChatContextMenu(e, wrapper);
+        else hideChatContextMenu();
+    });
+
+    // Долгое удержание на мобильных
+    document.addEventListener('touchstart', e => {
+        const wrapper = e.target.closest('.chat-item-wrapper[data-type="private"]');
+        if (!wrapper) return;
+        _chatLongTarget = { wrapper, touch: e.touches[0] };
+        _chatLongTimer = setTimeout(() => {
+            if (_chatLongTarget) {
+                const fakeE = {
+                    preventDefault: ()=>{}, stopPropagation: ()=>{},
+                    clientX: _chatLongTarget.touch.clientX,
+                    clientY: _chatLongTarget.touch.clientY
+                };
+                showChatContextMenu(fakeE, _chatLongTarget.wrapper);
+                _chatLongTarget = null;
+            }
+        }, 500);
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => { clearTimeout(_chatLongTimer); _chatLongTarget = null; });
+    document.addEventListener('touchmove', () => { clearTimeout(_chatLongTimer); _chatLongTarget = null; });
+
+    // Скрытие при клике вне
+    document.addEventListener('click', e => {
+        if (_chatCtxMenu && !_chatCtxMenu.contains(e.target)) hideChatContextMenu();
+    });
+
+    /* ===== DRAWER (боковое меню) ===== */
+    function openDrawer() {
+        document.getElementById('drawer').classList.add('active');
+        document.getElementById('drawerOverlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+        document.getElementById('drawer').classList.remove('active');
+        document.getElementById('drawerOverlay').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    /* ===== BOTTOM SHEET ===== */
+    function openSheet() {
+        document.getElementById('bottomSheet').classList.add('active');
+        document.getElementById('sheetOverlay').classList.add('active');
+    }
+
+    function closeSheet() {
+        document.getElementById('bottomSheet').classList.remove('active');
+        document.getElementById('sheetOverlay').classList.remove('active');
+    }
+
+    /* ===== МОДАЛКИ ===== */
+    function showNewChatForm() {
+        document.getElementById('newChatModal').classList.add('active');
+    }
+
+    function hideNewChatForm() {
+        document.getElementById('newChatModal').classList.remove('active');
+    }
+
+    function showCreateGroupModal() {
+        document.getElementById('createGroupModal').classList.add('active');
+        // Подсветить дефолтные radio при открытии
+        cgUpdateVisUI();
+        cgUpdateJtUI();
+    }
+
+    function hideCreateGroupModal() {
+        document.getElementById('createGroupModal').classList.remove('active');
+    }
+
+    function cgUpdateVisUI() {
+        const pub = document.querySelector('input[name="visibility"][value="public"]')?.checked;
+        const pubLbl  = document.getElementById('cg-vis-public-lbl');
+        const privLbl = document.getElementById('cg-vis-private-lbl');
+        if (pubLbl)  pubLbl.style.borderColor  = pub  ? 'var(--accent)' : 'transparent';
+        if (privLbl) privLbl.style.borderColor = !pub ? 'var(--accent)' : 'transparent';
+    }
+    function cgUpdateJtUI() {
+        const open = document.querySelector('input[name="join_type"][value="open"]')?.checked;
+        const openLbl = document.getElementById('cg-jt-open-lbl');
+        const reqLbl  = document.getElementById('cg-jt-request-lbl');
+        if (openLbl) openLbl.style.borderColor = open  ? 'var(--accent)' : 'transparent';
+        if (reqLbl)  reqLbl.style.borderColor  = !open ? 'var(--accent)' : 'transparent';
+    }
+
+    // Закрытие по клику на оверлей
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('active');
+        });
+    });
+
+    // Закрытие по ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDrawer();
+            closeSheet();
+            document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+        }
+    });
+
+    /* ===== СОЗДАНИЕ ГРУППЫ ===== */
+    document.getElementById('createGroupForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        fetch('/group/create', { method: 'POST', body: formData })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    return response.json().then(data => alert(data.error || 'Ошибка при создании группы'));
+                }
+            })
+            .catch(() => alert('Ошибка при создании группы'));
+    });
+
+    /* ===== УДАЛЕНИЕ ЧАТА ===== */
+    function deleteChat(chatId, chatName) {
+        if (confirm(`Удалить чат с ${chatName}? Все сообщения будут удалены.`)) {
+            fetch(`/chat/${chatId}/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const el = document.querySelector(`.chat-item-wrapper[data-chat-id="${chatId}"][data-type="private"]`);
+                    if (el) el.remove();
+                    const list = document.querySelector('.chats-list');
+                    if (list.children.length === 0) {
+                        list.innerHTML = `
+                            <div class="empty-chats">
+                                <span class="empty-icon">
+                                    <svg width="64" height="64" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-chat"></use></svg>
+                                </span>
+                                <h3>Нет чатов</h3>
+                                <p>Нажмите карандаш, чтобы начать общение</p>
+                            </div>`;
+                    }
+                    showNotification('Чат удалён', 'success');
+                } else {
+                    alert(data.error || 'Ошибка при удалении чата');
+                }
+            })
+            .catch(() => alert('Ошибка при удалении чата'));
+        }
+    }
+
+    /* ===== ПОИСК ===== */
+    let _searchTimeout = null;
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        clearTimeout(_searchTimeout);
+        const q = e.target.value.trim();
+
+        // Если поле пустое — показываем все чаты, скрываем результаты поиска
+        if (!q) {
+            const sr = document.getElementById('searchResultsSection');
+            if (sr) sr.remove();
+            // Принудительно обновляем список чатов
+            fetchChatsList();
+            return;
+        }
+
+        // Сначала фильтруем существующие чаты
+        let localMatch = false;
+        document.querySelectorAll('.chat-item-wrapper').forEach(w => {
+            const title = w.querySelector('h3').textContent.toLowerCase();
+            const matches = title.includes(q.toLowerCase());
+            w.style.display = matches ? 'flex' : 'none';
+            if (matches) localMatch = true;
+        });
+
+        // Ищем пользователей И публичные группы через API параллельно (от 4 символов)
+        if (q.length < 4) {
+            const sr = document.getElementById('searchResultsSection');
+            if (sr) sr.remove();
+            return;
+        }
+        _searchTimeout = setTimeout(() => {
+            Promise.all([
+                fetch(`/api/search_users?q=${encodeURIComponent(q)}`).then(r => r.json()).catch(() => ({ users: [] })),
+                fetch(`/groups/search?q=${encodeURIComponent(q)}`).then(r => r.json()).catch(() => ({ groups: [] }))
+            ]).then(([userData, groupData]) => {
+                let section = document.getElementById('searchResultsSection');
+                if (!section) {
+                    section = document.createElement('div');
+                    section.id = 'searchResultsSection';
+                    section.style.cssText = 'padding: 8px 15px 0;';
+                    document.getElementById('chatsList').prepend(section);
+                }
+
+                const users  = userData.users  || [];
+                const groups = groupData.groups || [];
+
+                if (users.length === 0 && groups.length === 0) {
+                    section.innerHTML = '';
+                    return;
+                }
+
+                const usersHtml = users.length > 0 ? `
+                    <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.7px;padding:4px 0 8px;">Пользователи</div>
+                    ${users.map(u => `
+                        <div class="chat-item-wrapper" style="margin-bottom:8px;">
+                            <a href="${u.profile_url}" class="chat-item" style="text-decoration:none;color:inherit;">
+                                <div class="chat-avatar">
+                                    <img src="${u.avatar}" alt="">
+                                    <span class="status ${u.status}"></span>
+                                </div>
+                                <div class="chat-info">
+                                    <div class="chat-header">
+                                        <h3>${u.username}</h3>
+                                        <span class="chat-time">${u.status === 'online' ? 'Онлайн' : ''}</span>
+                                    </div>
+                                    <div class="chat-preview">
+                                        <p style="color:var(--text-muted);">Нажмите чтобы открыть профиль</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <button class="delete-chat-btn" style="color:var(--accent);"
+                                    onclick="event.preventDefault();event.stopPropagation();startChatFromSearch('${u.username}')"
+                                    title="Написать">
+                                <svg width="20" height="20" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-chat"></use></svg>
+                            </button>
+                        </div>
+                    `).join('')}
+                    <div style="height:4px;"></div>
+                ` : '';
+
+                const groupsHtml = groups.length > 0 ? `
+                    <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.7px;padding:4px 0 8px;">Публичные группы</div>
+                    ${groups.map(g => `
+                        <div style="display:flex;align-items:center;gap:10px;padding:8px 4px;cursor:pointer;border-radius:12px;transition:background .15s;"
+                             onclick="window.location.href='/group/${g.id}'"
+                             onmouseenter="this.style.background='var(--bg-hover)'"
+                             onmouseleave="this.style.background=''">
+                            <img src="${g.icon}" alt=""
+                                 style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:14px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${g.name}</div>
+                                <div style="font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    ${g.members_count} уч. · ${g.join_type === 'request' ? '📋 По заявке' : '✅ Открытая'}
+                                </div>
+                            </div>
+                            <span style="font-size:12px;font-weight:600;color:${g.is_member ? 'var(--text-secondary)' : 'var(--accent)'};flex-shrink:0;">
+                                ${g.is_member ? 'Открыть' : 'Вступить'}
+                            </span>
+                        </div>
+                    `).join('')}
+                    <div style="height:8px;"></div>
+                ` : '';
+
+                section.innerHTML = usersHtml + groupsHtml;
+            });
+        }, 250);
+    });
+
+    function startChatFromSearch(username) {
+        window.location.href = `/start_chat?username=${encodeURIComponent(username)}`;
+    }
+
+    /* ===== УВЕДОМЛЕНИЯ ===== */
+    function showNotification(message, type = 'success') {
+        const n = document.createElement('div');
+        n.textContent = message;
+        n.style.cssText = `
+            position: fixed; top: 20px; right: 20px; padding: 15px 20px;
+            border-radius: 10px; color: white; z-index: 9999;
+            animation: slideIn 0.3s ease;
+            background: ${type === 'success'
+                ? 'linear-gradient(135deg, #2ed573 0%, #1abc9c 100%)'
+                : 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)'};
+        `;
+        document.body.appendChild(n);
+        setTimeout(() => {
+            n.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => n.remove(), 300);
+        }, 3000);
+    }
+
+    /* ===== АВТООБНОВЛЕНИЕ ЧАТОВ через WebSocket ===== */
+    function startAutoRefresh() {
+        const socket = window.getAppSocket();
+        if (!socket) return;
+        window._chatsSocket = socket;
+
+        function onChatsSocketReady() {
+            console.log('[WS chats] connected');
+            fetchChatsList();
+        }
+
+        socket.on('connect', onChatsSocketReady);
+
+        if (socket.connected) {
+            onChatsSocketReady();
+        }
+
+        // Новое сообщение — обновляем список
+        socket.on('chat_updated', (data) => {
+            fetchChatsList();
+        });
+
+        // Чат удалён другим участником — убираем из списка мгновенно
+        socket.on('chat_deleted', (data) => {
+            const el = document.querySelector(`.chat-item-wrapper[data-chat-id="${data.chat_id}"][data-type="private"]`);
+            if (el) {
+                el.style.transition = 'opacity 0.3s, transform 0.3s';
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(-20px)';
+                setTimeout(() => {
+                    el.remove();
+                    const list = document.getElementById('chatsList');
+                    if (list && list.querySelectorAll('.chat-item-wrapper').length === 0) {
+                        list.innerHTML = `
+                            <div class="empty-chats">
+                                <span class="empty-icon">
+                                    <svg width="64" height="64" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-chat"></use></svg>
+                                </span>
+                                <h3>Нет чатов</h3>
+                                <p>Нажмите карандаш, чтобы начать общение</p>
+                            </div>`;
+                    }
+                }, 300);
+            }
+        });
+
+        // При переподключении тоже обновляем
+        socket.on('reconnect', () => {
+            fetchChatsList();
+        });
+    }
+
+    function fetchChatsList() {
+        // Не перезаписываем список пока активен поиск
+        const q = (document.getElementById('searchInput') || {}).value || '';
+        if (q.trim()) return;
+        fetch('/api/get_chats_data')
+            .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+            .then(data => updateChatsList(data.chats))
+            .catch(err => console.error('Ошибка обновления чатов:', err));
+    }
+
+    function updateChatsList(chats) {
+        const chatsList = document.getElementById('chatsList');
+        if (!chatsList) return;
+        // Не перезаписываем пока активен поиск
+        const q = (document.getElementById('searchInput') || {}).value || '';
+        if (q.trim()) return;
+        const scrollTop = chatsList.scrollTop;
+        let html = '';
+
+        if (chats && chats.length > 0) {
+            chats.forEach(chat => {
+                if (chat.type === 'saved') {
+                    html += `
+                    <div class="chat-item-wrapper" data-chat-id="${chat.id}" data-type="saved">
+                        <a href="${chat.chat_url}" class="chat-item">
+                            <div class="chat-avatar saved-chat-avatar-wrap">
+                                <div class="saved-chat-avatar-icon">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-bookmark"></use></svg>
+                                </div>
+                            </div>
+                            <div class="chat-info">
+                                <div class="chat-header">
+                                    <h3>Избранное</h3>
+                                    <span class="chat-time" data-utc="${chat.last_message_ts || ''}">${chat.last_message_ts ? '' : chat.last_message_time}</span>
+                                </div>
+                                <div class="chat-preview">
+                                    <p>${chat.last_message}</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>`;
+                } else if (chat.type === 'private') {
+                    html += `
+                    <div class="chat-item-wrapper" data-chat-id="${chat.id}" data-type="private">
+                        <a href="${chat.chat_url}" class="chat-item">
+                            <div class="chat-avatar">
+                                <img src="${chat.other_avatar}" alt="Avatar">
+                                <span class="status ${chat.other_status}"></span>
+                                ${chat.unread_count > 0 ? `<span class="unread-badge">${chat.unread_count}</span>` : ''}
+                            </div>
+                            <div class="chat-info">
+                                <div class="chat-header">
+                                    <h3>${chat.other_username}</h3>
+                                    <span class="chat-time" data-utc="${chat.last_message_ts || ''}">${chat.last_message_ts ? '' : chat.last_message_time}</span>
+                                </div>
+                                <div class="chat-preview">
+                                    <p>${chat.last_message}</p>
+                                    ${chat.unread_count > 0 ? `<span class="chat-badge">${chat.unread_count}</span>` : ''}
+                                </div>
+                            </div>
+                        </a>
+                    </div>`;
+                } else if (chat.type === 'group') {
+                    html += `
+                    <div class="chat-item-wrapper" data-chat-id="${chat.id}" data-type="group">
+                        <a href="${chat.chat_url}" class="chat-item">
+                            <div class="chat-avatar">
+                                <img src="${chat.group_icon}" alt="Group">
+                                ${chat.unread_count > 0 ? `<span class="unread-badge">${chat.unread_count}</span>` : ''}
+                            </div>
+                            <div class="chat-info">
+                                <div class="chat-header">
+                                    <h3>${chat.group_name}</h3>
+                                    <span class="chat-time" data-utc="${chat.last_message_ts || ''}">${chat.last_message_ts ? '' : chat.last_message_time}</span>
+                                </div>
+                                <div class="chat-preview">
+                                    <p>${chat.last_message}</p>
+                                    ${chat.unread_count > 0 ? `<span class="chat-badge">${chat.unread_count}</span>` : ''}
+                                </div>
+                            </div>
+                        </a>
+                    </div>`;
+                }
+            });
+        } else {
+            html = `
+            <div class="empty-chats">
+                <span class="empty-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-chat"></use></svg>
+                </span>
+                <h3>Нет чатов</h3>
+                <p>Нажмите карандаш, чтобы начать общение</p>
+            </div>`;
+        }
+
+        if (chatsList.innerHTML !== html) {
+            chatsList.innerHTML = html;
+            chatsList.scrollTop = scrollTop;
+            // Конвертируем UTC → локальное время устройства
+            if (typeof window.msgrRenderTimes === 'function') window.msgrRenderTimes();
+            // Обновляем превью черновиков после перерисовки списка
+            if (typeof Drafts !== 'undefined') Drafts.renderDraftPreviews();
+        }
+    }
+
+    // Сбрасываем поле поиска при загрузке (защита от автозаполнения браузера)
+    document.addEventListener('DOMContentLoaded', function() { var si = document.getElementById('searchInput'); if (si) si.value = ''; });
+
+    document.addEventListener('DOMContentLoaded', startAutoRefresh);
+
+    // Черновики — показываем превью в списке чатов
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof Drafts !== 'undefined') {
+            Drafts.renderDraftPreviews();
+        }
+    });
+</script>
+
+</div>{# /mobile-layout #}
+
+<script src="{{ url_for('static', filename='js/desktop_sidebar.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    dsStartLiveChats();
+});
+</script>
+
+{% endblock %}

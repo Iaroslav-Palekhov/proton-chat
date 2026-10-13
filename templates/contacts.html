@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}Контакты - Мессенджер{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/desktop_sidebar.css') }}">
+{% endblock %}
+
+{% block content %}
+<style>
+    .app-container, .sidebar, .main-content { display: none; }
+
+    .contacts-page {
+        min-height: 100vh;
+        background: var(--bg-primary);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+    }
+
+    .contacts-card {
+        background: var(--bg-secondary);
+        width: 100%;
+        max-width: 560px;
+        min-height: 100vh;
+    }
+
+    .contacts-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+    }
+
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: background 0.2s;
+    }
+    .back-btn:hover { background: var(--bg-tertiary); }
+
+    .contacts-header h1 {
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        flex: 1;
+    }
+
+    .search-contacts {
+        margin: 12px 16px;
+        background: var(--bg-tertiary);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+    }
+
+    .search-contacts svg { color: var(--text-muted); flex-shrink: 0; }
+
+    .search-contacts input {
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        width: 100%;
+        font-size: 15px;
+    }
+    .search-contacts input:focus { outline: none; }
+    .search-contacts input::placeholder { color: var(--text-muted); }
+
+    .contacts-list {
+        padding: 8px 16px;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 14px;
+        transition: background 0.15s;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        background: var(--bg-tertiary);
+    }
+
+    .contact-item:hover { background: var(--bg-hover); }
+
+    .contact-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .contact-info { flex: 1; min-width: 0; }
+
+    .contact-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .contact-status {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .contact-status.online { color: var(--success, #2ed573); }
+
+    .contact-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .contact-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+        flex-shrink: 0;
+    }
+
+    .contact-btn-chat {
+        background: rgba(0, 168, 132, 0.12);
+        color: var(--accent);
+    }
+    .contact-btn-chat:hover { background: rgba(0, 168, 132, 0.25); }
+
+    .contact-btn-remove {
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+    }
+    .contact-btn-remove:hover { background: rgba(239, 68, 68, 0.2); }
+
+    .empty-contacts {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-contacts svg { opacity: 0.4; margin-bottom: 16px; }
+    .empty-contacts h3 { color: var(--text-primary); margin-bottom: 8px; }
+
+    /* Секция поиска */
+    .search-section {
+        padding: 0 16px 12px;
+    }
+
+    .search-section-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 10px;
+        margin-top: 16px;
+        padding: 0 4px;
+    }
+
+    .search-results {
+        background: var(--bg-tertiary);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .search-result-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.15s;
+    }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-item:hover { background: var(--bg-hover); }
+
+    .search-result-item img {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .search-result-info { flex: 1; min-width: 0; }
+    .search-result-info a {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-decoration: none;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .search-result-info a:hover { color: var(--accent); }
+    .search-result-info span {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .add-contact-btn {
+        background: rgba(0, 168, 132, 0.12);
+        color: var(--accent);
+        border: none;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .add-contact-btn:hover { background: rgba(0, 168, 132, 0.25); }
+    .add-contact-btn.already { background: transparent; color: var(--text-muted); cursor: default; }
+
+    .search-empty {
+        padding: 20px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0;
+        transition: opacity 0.3s, transform 0.3s;
+        z-index: 9999;
+        pointer-events: none;
+        white-space: nowrap;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 560px) {
+        .contacts-card { max-width: 100%; }
+    }
+</style>
+
+<div class="contacts-page">
+<div class="contacts-card">
+
+    <div class="contacts-header">
+        <a href="{{ url_for('chats') }}" class="back-btn js-back" title="Назад">
+            <svg width="22" height="22" viewBox="0 0 24 24" class="ico">
+                <use xlink:href="#icon-back"></use>
+            </svg>
+        </a>
+        <h1>Контакты</h1>
+    </div>
+
+    <!-- Поиск пользователей -->
+    <div class="search-contacts">
+        <svg width="16" height="16" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-search"></use></svg>
+        <input type="text" id="userSearchInput" placeholder="Поиск пользователей по юзернейму...">
+    </div>
+
+    <!-- Результаты поиска -->
+    <div class="search-section" id="searchSection" style="display:none;">
+        <div class="search-section-title">Результаты поиска</div>
+        <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <!-- Список контактов -->
+    <div class="contacts-list" id="contactsList">
+        {% if contacts %}
+            <div class="search-section-title" style="padding: 4px 4px 10px;">Мои контакты ({{ contacts|length }})</div>
+            {% for c in contacts %}
+            <div class="contact-item" id="contact-{{ c.contact_user.id }}">
+                <img src="{{ uploads_url(c.contact_user.avatar) }}"
+                     class="contact-avatar"
+                     alt="Avatar">
+                <div class="contact-info">
+                    <div class="contact-name">{{ c.contact_user.username }}</div>
+                    <div class="contact-status {% if c.contact_user.status == 'online' %}online{% endif %}">
+                        {% if c.contact_user.status == 'online' %}● Онлайн{% else %}● Был(а) в сети{% endif %}
+                    </div>
+                </div>
+                <div class="contact-actions">
+                    <button class="contact-btn contact-btn-chat"
+                            onclick="startChatWith('{{ c.contact_user.username }}')"
+                            title="Написать">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-chat"></use></svg>
+                    </button>
+                    <button class="contact-btn contact-btn-remove"
+                            onclick="removeContact({{ c.contact_user.id }}, '{{ c.contact_user.username }}')"
+                            title="Удалить из контактов">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-contacts" id="emptyMsg">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <h3>Нет контактов</h3>
+                <p>Найдите пользователей через поиск выше</p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(text) {
+    const t = document.getElementById('toast');
+    t.textContent = text;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function startChatWith(username) {
+    window.location.href = `/start_chat?username=${encodeURIComponent(username)}`;
+}
+
+function removeContact(userId, username) {
+    if (!confirm(`Удалить ${username} из контактов?`)) return;
+    fetch(`/contacts/remove/${userId}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const el = document.getElementById(`contact-${userId}`);
+                if (el) {
+                    el.style.transition = 'opacity 0.3s';
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 300);
+                }
+                showToast('Контакт удалён');
+            } else {
+                showToast(data.error || 'Ошибка');
+            }
+        })
+        .catch(() => showToast('Ошибка соединения'));
+}
+
+// Поиск пользователей
+let searchTimeout = null;
+document.getElementById('userSearchInput').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const q = this.value.trim();
+    if (q.length < 4) {
+        document.getElementById('searchSection').style.display = 'none';
+        return;
+    }
+    searchTimeout = setTimeout(() => searchUsers(q), 300);
+});
+
+function searchUsers(q) {
+    fetch(`/api/search_users?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(data => {
+            const section = document.getElementById('searchSection');
+            const results = document.getElementById('searchResults');
+            if (!data.users || data.users.length === 0) {
+                results.innerHTML = '<div class="search-empty">Пользователи не найдены</div>';
+                section.style.display = 'block';
+                return;
+            }
+            results.innerHTML = data.users.map(u => `
+                <div class="search-result-item">
+                    <img src="${u.avatar}" alt="">
+                    <div class="search-result-info">
+                        <a href="${u.profile_url}">${u.username}</a>
+                        <span>${u.status === 'online' ? '● Онлайн' : '● Не в сети'}</span>
+                    </div>
+                    ${u.is_contact
+                        ? '<span class="add-contact-btn already">В контактах</span>'
+                        : `<button class="add-contact-btn" onclick="addContact(${u.id}, this)">+ Добавить</button>`
+                    }
+                </div>
+            `).join('');
+            section.style.display = 'block';
+        })
+        .catch(() => {});
+}
+
+function addContact(userId, btn) {
+    btn.disabled = true;
+    fetch(`/contacts/add/${userId}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                btn.textContent = 'В контактах';
+                btn.classList.add('already');
+                showToast('Контакт добавлен');
+                // Обновим страницу через секунду чтобы обновить список
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showToast(data.error || 'Ошибка');
+                btn.disabled = false;
+            }
+        })
+        .catch(() => { showToast('Ошибка соединения'); btn.disabled = false; });
+}
+</script>
+{% endblock %}

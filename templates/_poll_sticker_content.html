@@ -1,0 +1,16 @@
+{% if message_polls is defined and message.id in message_polls %}
+{% set poll = message_polls[message.id] %}
+<div class="poll-card" data-message-id="{{ message.id }}" data-poll-id="{{ poll.id }}">
+    <div class="poll-question">{{ poll.question }}</div>
+    {% for opt in poll.options %}
+    <button type="button" class="poll-option{% if opt.voted %} voted{% endif %}" data-option-id="{{ opt.id }}" data-poll-id="{{ poll.id }}">
+        <span class="poll-opt-text">{{ opt.text }}</span>
+        <span class="poll-opt-bar"><span style="width:{{ opt.percent }}%"></span></span>
+        <span class="poll-opt-pct">{{ opt.percent }}%</span>
+    </button>
+    {% endfor %}
+    <div class="poll-meta">{{ poll.total_voters }} голосов</div>
+</div>
+{% elif message_stickers is defined and message.id in message_stickers %}
+<img class="message-sticker" src="{{ message_stickers[message.id].url }}" alt="sticker">
+{% endif %}

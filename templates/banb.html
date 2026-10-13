@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аккаунт заблокирован</title>
+    <link rel="icon" href="/static/icon/favicon.ico" sizes="any">
+    <style>
+        :root {
+            --bg-primary: #0b141a;
+            --bg-secondary: #1f2c33;
+            --accent: #00a884;
+            --text-primary: #fff;
+            --text-secondary: #8696a0;
+            --border: #3c4a53;
+            --danger: #f87171;
+            --radius-md: 12px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --accent: #25a87e;
+            --text-primary: #111b21;
+            --text-secondary: #54656f;
+            --border: #d1d7db;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .ban-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px 32px;
+            max-width: 440px;
+            width: 100%;
+            text-align: center;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .ban-icon {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: rgba(248, 113, 113, 0.12);
+            color: var(--danger);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .ban-text {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        .ban-until {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 16px 0 6px;
+        }
+        .countdown {
+            font-size: 14px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 28px;
+            min-height: 20px;
+        }
+        .btn-logout {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-logout:hover { background: rgba(255,255,255,0.05); }
+    </style>
+    <script>
+        (function(){
+            var m = document.cookie.match('(?:^|; )theme=([^;]*)');
+            var pref = m ? decodeURIComponent(m[1]) : 'system';
+            var resolved = pref === 'dark' ? 'dark' : pref === 'light' ? 'light' :
+                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', resolved);
+            var accentM = document.cookie.match('(?:^|; )accent=([^;]*)');
+            var accent = accentM ? decodeURIComponent(accentM[1]) : 'green';
+            var ACCENT = {
+                green:  {light:'#25a87e', dark:'#00a884'},
+                olive:  {light:'#6b8e23', dark:'#8fb33a'},
+                blue:   {light:'#1d72b8', dark:'#3b9edd'},
+                red:    {light:'#c0392b', dark:'#e05c4f'},
+                purple: {light:'#7c3aed', dark:'#9f60f5'}
+            };
+            var c = (ACCENT[accent] || ACCENT.green)[resolved];
+            document.documentElement.style.setProperty('--accent', c);
+        })();
+    </script>
+</head>
+<body>
+    <div class="ban-card">
+        <div class="ban-icon">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+            </svg>
+        </div>
+        <h1>Вы заблокированы</h1>
+        <p class="ban-text">Ваш аккаунт заблокирован за плохое поведение{% if expires_iso %} до{% endif %}:</p>
+        <div class="ban-until" id="banUntil">
+            {% if expires_iso %}—{% else %}навсегда{% endif %}
+        </div>
+        <div class="countdown" id="countdown"></div>
+        <a href="{{ url_for('logout') }}" class="btn-logout">Выйти</a>
+    </div>
+
+    {% if expires_iso %}
+    <script>
+    (function() {
+        const expiresAt = new Date('{{ expires_iso }}');
+        const untilEl = document.getElementById('banUntil');
+        const countdownEl = document.getElementById('countdown');
+
+        function pad(n) { return n < 10 ? '0' + n : n; }
+
+        function formatDate(d) {
+            return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear() +
+                   ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        }
+
+        function tick() {
+            const now = new Date();
+            const diff = expiresAt - now;
+            if (diff <= 0) {
+                untilEl.textContent = 'блокировка истекла';
+                countdownEl.textContent = 'Обновите страницу';
+                return;
+            }
+            untilEl.textContent = formatDate(expiresAt);
+            const days = Math.floor(diff / 86400000);
+            const hours = Math.floor((diff % 86400000) / 3600000);
+            const mins = Math.floor((diff % 3600000) / 60000);
+            const secs = Math.floor((diff % 60000) / 1000);
+            let parts = [];
+            if (days > 0) parts.push(days + ' д.');
+            parts.push(pad(hours) + ':' + pad(mins) + ':' + pad(secs));
+            countdownEl.textContent = 'Осталось: ' + parts.join(' ');
+            setTimeout(tick, 1000);
+        }
+        tick();
+    })();
+    </script>
+    {% endif %}
+</body>
+</html>

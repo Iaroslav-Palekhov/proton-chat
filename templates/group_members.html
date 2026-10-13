@@ -1,0 +1,528 @@
+{% extends "base.html" %}
+
+{% block title %}Участники {{ group.name }} - Мессенджер{% endblock %}
+
+{% block content %}
+<style>
+/* Переопределяем мобильный layout для страницы участников */
+.app-container {
+    height: 100dvh;
+    overflow: hidden;
+}
+.sidebar {
+    width: 100% !important;
+    max-height: none !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    flex: 1 !important;
+}
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+        height: 100dvh;
+    }
+    .sidebar {
+        width: 100% !important;
+        max-height: none !important;
+        height: 100dvh !important;
+        overflow-y: auto !important;
+    }
+}
+
+.gm-section-title {
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.gm-invite-card {
+    background: var(--bg-tertiary, var(--bg-primary));
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.gm-invite-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.member-actions .btn-icon svg.ico {
+    width: 20px;
+    height: 20px;
+}
+</style>
+<div class="app-container">
+    <div class="sidebar" style="width: 100%; max-width: 600px; margin: 0 auto; border-right: none;">
+        <div class="header" style="position: sticky; top: 0; z-index: 10; background: var(--bg-secondary);">
+            <div class="user-info">
+                <a href="{{ url_for('group_chat', group_id=group.id) }}" class="btn-icon js-back" style="background: var(--bg-tertiary); margin-right: 10px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" class="ico">
+                        <use xlink:href="#icon-back"></use>
+                    </svg>
+                </a>
+                <img src="{{ uploads_url(group.icon) }}"
+                     alt="Group"
+                     class="avatar">
+                <div class="user-details">
+                    <h3>{{ group.name }}</h3>
+                    <p id="membersCount">
+                        <svg width="16" height="16" viewBox="0 0 24 24" class="ico" style="vertical-align: middle; margin-right: 4px;">
+                            <use xlink:href="#icon-group"></use>
+                        </svg>
+                        {{ group.members|length }} участников
+                    </p>
+                </div>
+            </div>
+            {% if current_membership.role in ['owner', 'admin'] %}
+            <button class="btn btn-secondary btn-sm" onclick="showAddMemberModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" class="ico" style="vertical-align: middle; margin-right: 4px;">
+                    <use xlink:href="#icon-user-plus"></use>
+                </svg>
+                Добавить
+            </button>
+            {% endif %}
+        </div>
+
+        <div style="padding: 20px;">
+
+            {# ── Invite-ссылка (только для участников) ── #}
+            {% if current_membership.role in ['owner', 'admin'] %}
+            <div class="gm-invite-card">
+                <div class="gm-invite-label">
+                    <span class="ico-box accent" style="width:32px;height:32px;border-radius:8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-copy"></use></svg>
+                    </span>
+                    Ссылка-приглашение
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input id="inviteLinkInput" type="text" readonly
+                           style="flex:1; background:var(--bg-secondary); border:1.5px solid var(--border); border-radius:9px; padding:9px 12px; font-size:13px; color:var(--text-primary); outline:none; cursor:pointer;"
+                           onclick="this.select()" placeholder="Загрузка...">
+                    <button class="btn-icon" onclick="copyInviteLink()" title="Скопировать">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-copy"></use></svg>
+                    </button>
+                    <button class="btn-icon" onclick="resetInviteLink()" title="Сбросить ссылку" style="color:var(--danger);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-refresh"></use></svg>
+                    </button>
+                </div>
+                {% if group.group_username %}
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:8px;">
+                    Также по юзернейму: <span style="color:var(--accent);">@{{ group.group_username }}</span>
+                    &nbsp;·&nbsp; <a href="/g/{{ group.group_username }}" style="color:var(--accent);">/g/{{ group.group_username }}</a>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {# ── Заявки на вступление (только admin/owner, только для join_type=request) ── #}
+            {% if current_membership.role in ['owner', 'admin'] and group.join_type == 'request' %}
+            <div id="joinRequestsSection" style="margin-bottom: 24px;">
+                <h3 class="gm-section-title">
+                    <span class="ico-box orange" style="width:36px;height:36px;border-radius:10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-clipboard"></use></svg>
+                    </span>
+                    Заявки на вступление
+                    <span id="requestsBadge" style="display:none; background:var(--danger); color:#fff; border-radius:20px; padding:1px 8px; font-size:12px;"></span>
+                </h3>
+                <div id="requestsList">
+                    <p style="color:var(--text-secondary); font-size:14px;">Загрузка...</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div style="margin-bottom: 20px;">
+                <h3 class="gm-section-title">
+                    <span class="ico-box accent" style="width:36px;height:36px;border-radius:10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-profile"></use></svg>
+                    </span>
+                    Владелец
+                </h3>
+                <div id="ownersList"></div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 class="gm-section-title">
+                    <span class="ico-box blue" style="width:36px;height:36px;border-radius:10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-shield"></use></svg>
+                    </span>
+                    Администраторы
+                </h3>
+                <div id="adminsList"></div>
+            </div>
+
+            <div>
+                <h3 class="gm-section-title">
+                    <span class="ico-box purple" style="width:36px;height:36px;border-radius:10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-group"></use></svg>
+                    </span>
+                    Участники
+                </h3>
+                <div id="regularMembersList"></div>
+            </div>
+
+            {% if current_membership.role in ['owner', 'admin'] %}
+            <div id="bannedSection" style="margin-top: 28px;">
+                <h3 class="gm-section-title">
+                    <span class="ico-box red" style="width:36px;height:36px;border-radius:10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-block"></use></svg>
+                    </span>
+                    Заблокированные
+                </h3>
+                <div id="bannedList"><p style="color:var(--text-secondary);font-size:14px;">Загрузка...</p></div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления участника -->
+<div class="modal" id="addMemberModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 style="display:flex;align-items:center;gap:10px;">
+                <span class="ico-box purple" style="width:36px;height:36px;border-radius:10px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-user-plus"></use></svg>
+                </span>
+                Добавить участника
+            </h2>
+            <button type="button" class="btn-icon close-modal" onclick="hideAddMemberModal()" title="Закрыть" style="border:none;background:transparent;">
+                <svg width="22" height="22" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-close"></use></svg>
+            </button>
+        </div>
+        <form id="addMemberForm">
+            <div class="form-group">
+                <label>Имя пользователя</label>
+                <input type="text" name="username" placeholder="Введите username" required>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="hideAddMemberModal()">Отмена</button>
+                <button type="submit" class="btn" style="flex: 1;">Добавить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const GROUP_ID = {{ group.id }};
+    const OWNER_ID = {{ group.owner_id }};
+    let MY_ROLE = '{{ current_membership.role }}';
+
+    function _esc(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function _memberActionsHtml(m) {
+        const ico = (id, extra) => `<svg width="20" height="20" viewBox="0 0 24 24" class="ico"${extra || ''}><use xlink:href="#${id}"></use></svg>`;
+        if (MY_ROLE === 'owner' && m.role === 'admin' && m.user_id !== OWNER_ID) {
+            return `<div class="member-actions">
+                <button class="btn-icon" onclick="changeRole(${m.user_id}, 'member')" title="Убрать админа">${ico('icon-profile')}</button>
+                <button class="btn-icon" onclick="removeMember(${m.user_id}, false)" title="Выгнать" style="color:var(--danger);">${ico('icon-logout')}</button>
+                <button class="btn-icon" onclick="removeMember(${m.user_id}, true)" title="Забанить" style="color:#ff6b6b;">${ico('icon-block')}</button>
+            </div>`;
+        }
+        if (MY_ROLE === 'owner' && m.role === 'member') {
+            return `<div class="member-actions">
+                <button class="btn-icon" onclick="changeRole(${m.user_id}, 'admin')" title="Сделать админом">${ico('icon-shield')}</button>
+                <button class="btn-icon" onclick="removeMember(${m.user_id}, false)" title="Выгнать" style="color:var(--danger);">${ico('icon-logout')}</button>
+                <button class="btn-icon" onclick="removeMember(${m.user_id}, true)" title="Забанить" style="color:#ff6b6b;">${ico('icon-block')}</button>
+            </div>`;
+        }
+        if (MY_ROLE === 'admin' && m.role === 'member') {
+            return `<div class="member-actions">
+                <button class="btn-icon" onclick="removeMember(${m.user_id}, false)" title="Выгнать" style="color:var(--danger);">${ico('icon-logout')}</button>
+                <button class="btn-icon" onclick="removeMember(${m.user_id}, true)" title="Забанить" style="color:#ff6b6b;">${ico('icon-block')}</button>
+            </div>`;
+        }
+        return '';
+    }
+
+    function _memberItemHtml(m) {
+        const roleLabel = m.role === 'owner' ? 'Владелец' : m.role === 'admin' ? 'Администратор' : 'Участник';
+        const roleClass = m.role === 'owner' ? 'owner' : m.role === 'admin' ? 'admin' : '';
+        return `<div class="member-item" id="member-${m.user_id}">
+            <img src="/media/${_esc(m.avatar)}" alt="Avatar" class="member-avatar"
+                 onclick="window.location.href='/profile/${m.user_id}'" style="cursor:pointer;">
+            <div class="member-info">
+                <div class="member-name">${_esc(m.username)}</div>
+                <span class="member-role ${roleClass}">${roleLabel}</span>
+            </div>
+            ${_memberActionsHtml(m)}
+        </div>`;
+    }
+
+    function renderMembers(data) {
+        if (data.my_role) MY_ROLE = data.my_role;
+        const owners = data.members.filter(m => m.role === 'owner');
+        const admins = data.members.filter(m => m.role === 'admin');
+        const regular = data.members.filter(m => m.role === 'member');
+
+        document.getElementById('ownersList').innerHTML = owners.length
+            ? owners.map(_memberItemHtml).join('')
+            : '';
+
+        document.getElementById('adminsList').innerHTML = admins.length
+            ? admins.map(_memberItemHtml).join('')
+            : '<p style="color:var(--text-muted);text-align:center;padding:20px;">Нет администраторов</p>';
+
+        document.getElementById('regularMembersList').innerHTML = regular.length
+            ? regular.map(_memberItemHtml).join('')
+            : '<p style="color:var(--text-muted);text-align:center;padding:20px;">Нет участников</p>';
+
+        const countEl = document.getElementById('membersCount');
+        if (countEl) {
+            const n = data.total;
+            const word = (n % 10 === 1 && n % 100 !== 11) ? 'участник'
+                : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? 'участника'
+                : 'участников';
+            countEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" class="ico" style="vertical-align:middle;margin-right:4px;"><use xlink:href="#icon-group"></use></svg>${n} ${word}`;
+        }
+    }
+
+    async function loadMembers() {
+        try {
+            const r = await fetch(`/group/${GROUP_ID}/members/list`);
+            const d = await r.json();
+            if (d.members) renderMembers(d);
+        } catch(e) {}
+    }
+
+    // ── Invite link ──────────────────────────────────────────────────────────
+
+    async function loadInviteLink() {
+        try {
+            const r = await fetch(`/group/${GROUP_ID}/invite_link`);
+            const d = await r.json();
+            if (d.invite_link) {
+                document.getElementById('inviteLinkInput').value = d.invite_link;
+            }
+        } catch(e) {}
+    }
+
+    async function copyInviteLink() {
+        const inp = document.getElementById('inviteLinkInput');
+        if (!inp.value) return;
+        try {
+            await navigator.clipboard.writeText(inp.value);
+            inp.select();
+        } catch(e) {
+            inp.select();
+            document.execCommand('copy');
+        }
+    }
+
+    async function resetInviteLink() {
+        if (!confirm('Сбросить ссылку? Старая перестанет работать.')) return;
+        const r = await fetch(`/group/${GROUP_ID}/reset_invite_link`, {method:'POST'});
+        const d = await r.json();
+        if (d.invite_link) {
+            document.getElementById('inviteLinkInput').value = d.invite_link;
+        }
+    }
+
+    // ── Join requests ────────────────────────────────────────────────────────
+    {% if current_membership.role in ['owner', 'admin'] and group.join_type == 'request' %}
+    async function loadJoinRequests() {
+        try {
+            const r = await fetch(`/group/${GROUP_ID}/join_requests`);
+            const d = await r.json();
+            const list = document.getElementById('requestsList');
+            const badge = document.getElementById('requestsBadge');
+
+            if (d.count > 0) {
+                badge.textContent = d.count;
+                badge.style.display = 'inline-block';
+                list.innerHTML = d.requests.map(req => `
+                    <div class="member-item" id="req-${req.id}" style="margin-bottom:8px;">
+                        <img src="/media/${req.avatar}" class="member-avatar"
+                             onclick="window.location.href='/profile/${req.user_id}'"
+                             style="cursor:pointer;">
+                        <div class="member-info">
+                            <div class="member-name">${req.username}</div>
+                            <span style="font-size:12px; color:var(--text-secondary);">${window.msgrFormatDateTime ? window.msgrFormatDateTime(req.created_at) : req.created_at}</span>
+                        </div>
+                        <div class="member-actions" style="gap:6px;">
+                            <button class="btn btn-sm" style="background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;"
+                                    onclick="approveRequest(${req.id})">
+                                <svg width="14" height="14" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-check"></use></svg>
+                                Принять
+                            </button>
+                            <button class="btn btn-sm btn-secondary" style="padding:6px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;"
+                                    onclick="rejectRequest(${req.id})">
+                                <svg width="14" height="14" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-close"></use></svg>
+                                Отклонить
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                badge.style.display = 'none';
+                list.innerHTML = '<p style="color:var(--text-secondary);font-size:14px;">Нет новых заявок</p>';
+            }
+        } catch(e) {
+            document.getElementById('requestsList').innerHTML = '<p style="color:var(--text-secondary);font-size:14px;">Ошибка загрузки</p>';
+        }
+    }
+
+    async function approveRequest(reqId) {
+        const r = await fetch(`/group/${GROUP_ID}/join_requests/${reqId}/approve`, {method:'POST'});
+        const d = await r.json();
+        if (d.success) {
+            document.getElementById(`req-${reqId}`)?.remove();
+            loadJoinRequests();
+            loadMembers();
+        } else { alert(d.error || 'Ошибка'); }
+    }
+
+    async function rejectRequest(reqId) {
+        const r = await fetch(`/group/${GROUP_ID}/join_requests/${reqId}/reject`, {method:'POST'});
+        const d = await r.json();
+        if (d.success) {
+            document.getElementById(`req-${reqId}`)?.remove();
+            loadJoinRequests();
+        } else { alert(d.error || 'Ошибка'); }
+    }
+
+    loadJoinRequests();
+    {% endif %}
+
+    {% if current_membership.role in ['owner', 'admin'] %}
+    async function loadBannedList() {
+        try {
+            const r = await fetch(`/group/${GROUP_ID}/banned`);
+            const d = await r.json();
+            const list = document.getElementById('bannedList');
+            if (!list) return;
+            if (!d.banned || !d.banned.length) {
+                list.innerHTML = '<p style="color:var(--text-secondary);font-size:14px;">Нет заблокированных</p>';
+                return;
+            }
+            list.innerHTML = d.banned.map(b => `
+                <div class="member-item" id="ban-${b.user_id}" style="margin-bottom:8px;">
+                    <img src="/media/${b.avatar}" class="member-avatar">
+                    <div class="member-info">
+                        <div class="member-name">${b.username}</div>
+                        <span style="font-size:12px;color:var(--text-secondary);">Заблокирован</span>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" style="padding:6px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;"
+                            onclick="unbanUser(${b.user_id})">
+                        <svg width="14" height="14" viewBox="0 0 24 24" class="ico"><use xlink:href="#icon-refresh"></use></svg>
+                        Разбанить
+                    </button>
+                </div>
+            `).join('');
+        } catch(e) {
+            const list = document.getElementById('bannedList');
+            if (list) list.innerHTML = '<p style="color:var(--text-secondary);font-size:14px;">Ошибка загрузки</p>';
+        }
+    }
+
+    async function unbanUser(userId) {
+        const r = await fetch(`/group/${GROUP_ID}/unban/${userId}`, {method:'POST'});
+        const d = await r.json();
+        if (d.success) {
+            document.getElementById(`ban-${userId}`)?.remove();
+            loadBannedList();
+        } else { alert(d.error || 'Ошибка'); }
+    }
+
+    loadBannedList();
+    {% endif %}
+
+    // ── Add member ────────────────────────────────────────────────────────────
+    function showAddMemberModal() {
+        document.getElementById('addMemberModal').classList.add('active');
+    }
+
+    function hideAddMemberModal() {
+        document.getElementById('addMemberModal').classList.remove('active');
+    }
+
+    document.getElementById('addMemberForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        fetch('/group/{{ group.id }}/add_member', {method: 'POST', body: formData})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                hideAddMemberModal();
+                this.reset();
+                loadMembers();
+            }
+            else { alert(data.error || 'Ошибка при добавлении участника'); }
+        });
+    });
+
+    function removeMember(userId, ban) {
+        const msg = ban
+            ? 'Удалить участника и запретить вступление?'
+            : 'Удалить участника из группы?';
+        if (!confirm(msg)) return;
+        fetch(`/group/{{ group.id }}/remove_member/${userId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ban: !!ban})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                loadMembers();
+                if (ban && typeof loadBannedList === 'function') loadBannedList();
+            }
+            else { alert(data.error || 'Ошибка при удалении участника'); }
+        });
+    }
+
+    function changeRole(userId, role) {
+        const roleName = role === 'admin' ? 'администратора' : 'участника';
+        if (confirm(`Назначить пользователя ${roleName}?`)) {
+            const formData = new FormData();
+            formData.append('role', role);
+            fetch(`/group/{{ group.id }}/change_role/${userId}`, {method: 'POST', body: formData})
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) { loadMembers(); }
+                else { alert(data.error || 'Ошибка при изменении роли'); }
+            });
+        }
+    }
+
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('active');
+        });
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') hideAddMemberModal();
+    });
+
+    // Загружаем invite-ссылку при загрузке страницы
+    {% if current_membership.role in ['owner', 'admin'] %}
+    loadInviteLink();
+    {% endif %}
+    // Начальные данные с сервера
+    renderMembers({
+        total: {{ members|length }},
+        owner_id: OWNER_ID,
+        my_role: MY_ROLE,
+        members: [
+            {% for m in members %}
+            {user_id: {{ m.user_id }}, username: {{ m.user.username|tojson }}, avatar: {{ m.user.avatar|tojson }}, role: {{ m.role|tojson }}}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]
+    });
+</script>
+{% endblock %}

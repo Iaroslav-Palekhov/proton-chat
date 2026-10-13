@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    {% if csrf_token is defined %}<meta name="csrf-token" content="{{ csrf_token }}">{% endif %}
+    <title>{% block title %}Messenger{% endblock %}</title>
+    <!-- Preconnect для ускорения -->
+    <meta name="theme-color" content="#0b141a">
+    <!-- Favicon: только самые нужные форматы -->
+    <link rel="icon" href="/static/icon/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/static/icon/favicon.svg">
+    <link rel="apple-touch-icon" href="/static/icon/apple-touch-icon.png">
+    <link rel="manifest" href="/static/icon/site.webmanifest">
+    <!-- CSS: preload + rel=stylesheet для быстрой загрузки -->
+    <link rel="preload" href="{{ url_for('static', filename='css/style.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet';if(window.__applyAccent)window.__applyAccent();">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></noscript>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/icons.css') }}">
+    <!-- Критический инлайн CSS — рендерит форму мгновенно без ожидания style.css -->
+    <style>
+        :root{--bg-primary:#0b141a;--bg-secondary:#1f2c33;--text-primary:#fff;--text-secondary:#8696a0;--border:#3c4a53;--danger:#df4949;--radius-lg:30px;--radius-md:12px;--shadow:0 20px 40px rgba(0,0,0,.4)}
+        [data-theme="light"]{--bg-primary:#f0f2f5;--bg-secondary:#ffffff;--bg-tertiary:#f0f2f5;--bg-hover:#e8eaed;--text-primary:#111b21;--text-secondary:#54656f;--text-muted:#8696a0;--border:#d1d7db}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif}
+        body{background:var(--bg-primary);color:var(--text-primary);min-height:100vh;font-size:14px;line-height:1.5}
+        .auth-wrapper{display:flex;justify-content:center;align-items:center;min-height:100vh}
+        .auth-container{max-width:400px;width:100%;background:var(--bg-secondary);border-radius:var(--radius-lg);padding:40px 30px;border:1px solid rgba(255,255,255,.08);box-shadow:var(--shadow)}
+        .form-group{margin-bottom:16px}
+        .form-group label{display:block;margin-bottom:6px;color:var(--text-secondary);font-size:13px}
+        .form-group input{width:100%;padding:12px 16px;background:#2a3942;border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-primary);font-size:14px;outline:none;transition:border-color .2s}
+        .form-group input:focus{border-color:var(--accent)}
+        .btn{padding:14px 20px;border:none;border-radius:var(--radius-md);background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s}
+        .btn:hover{background:#039b7b}
+        .btn-block{width:100%;display:block}
+        .error-message{background:rgba(223,73,73,.15);border:1px solid var(--danger);color:var(--danger);padding:12px 16px;border-radius:var(--radius-md);margin-bottom:16px;font-size:14px}
+        .logo{text-align:center;margin-bottom:40px}
+        .logo-icon{background:var(--accent);width:80px;height:80px;border-radius:50%;margin:0 auto 15px;display:flex;align-items:center;justify-content:center;color:#fff}
+        .logo h1{font-size:28px;font-weight:600}
+        .auth-link{text-align:center;margin-top:15px;color:var(--text-secondary);font-size:14px}
+        .auth-link a{color:var(--accent);text-decoration:none}
+        @media(max-width:768px){}
+    </style>
+    <!-- Инициализация темы до рендера (без мерцания) -->
+    <script>
+    (function(){
+        var ACCENT={
+            green: {light:{accent:'#25a87e',sent:'#d9fdd3'},dark:{accent:'#00a884',sent:'#005c4b'}},
+            olive: {light:{accent:'#6b8e23',sent:'#e5edcc'},dark:{accent:'#8fb33a',sent:'#3a4e10'}},
+            blue:  {light:{accent:'#1d72b8',sent:'#cce4f7'},dark:{accent:'#3b9edd',sent:'#0a3d6b'}},
+            red:   {light:{accent:'#c0392b',sent:'#fad7d3'},dark:{accent:'#e05c4f',sent:'#6b1510'}},
+            purple:{light:{accent:'#7c3aed',sent:'#ede0fc'},dark:{accent:'#9f60f5',sent:'#3b1a7a'}}
+        };
+        var ACCENT_HOVER={
+            green: {light:'#1e9370',dark:'#039b7b'},
+            olive: {light:'#5a7a1a',dark:'#7a9c2e'},
+            blue:  {light:'#155d9e',dark:'#2e8ac6'},
+            red:   {light:'#a93226',dark:'#cc4a3d'},
+            purple:{light:'#6d28d9',dark:'#8b4de0'}
+        };
+        function gc(n){var m=document.cookie.match('(?:^|; )'+n+'=([^;]*)');return m?decodeURIComponent(m[1]):null;}
+        var pref=gc('theme')||'system';
+        var accent=gc('accent')||'purple';
+        var resolved=pref==='dark'?'dark':pref==='light'?'light':(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+        document.documentElement.setAttribute('data-theme',resolved);
+        var p=ACCENT[accent]||ACCENT.purple;
+        var ph=ACCENT_HOVER[accent]||ACCENT_HOVER.purple;
+        var c=p[resolved];
+        function applyAccent(){
+            document.documentElement.style.setProperty('--accent',c.accent);
+            document.documentElement.style.setProperty('--accent-hover',ph[resolved]);
+            document.documentElement.style.setProperty('--success',c.accent);
+            document.documentElement.style.setProperty('--sent-message',c.sent);
+            document.documentElement.style.setProperty('--sent-message-text',resolved==='light'?'#111b21':'#ffffff');
+            document.documentElement.style.setProperty('--messages-bg',resolved==='light'?'#efeae2':'#0e1c26');
+            document.documentElement.style.setProperty('--messages-bg-pattern',resolved==='light'?'none':'radial-gradient(circle at 10% 20%, rgba(0, 168, 132, 0.03) 0%, transparent 20%)');
+        }
+        window.__applyAccent = applyAccent;
+        applyAccent();
+        // style.css грузится асинхронно и перезаписывает :root — применяем снова после загрузки
+        document.addEventListener('DOMContentLoaded', applyAccent);
+    })();
+    </script>
+    <!-- Socket.IO клиент -->
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body{% if current_user.is_authenticated %} data-authenticated="1"{% endif %}>
+    {% if current_user.is_authenticated %}<script>window.__AUTH__=true;</script>{% endif %}
+    <!-- SVG Sprite (скрыт, загружается сразу — нужен для иконок) -->
+    {% include "svg_sprite.html" %}
+    
+    {% block content %}{% endblock %}
+    
+    {% block scripts %}
+    <!-- JS грузим defer — не блокирует рендер -->
+    <script defer src="{{ url_for('static', filename='js/time_local.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/drafts.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/script.js') }}?v=2"></script>
+    {% if current_user.is_authenticated %}
+    <script defer src="{{ url_for('static', filename='js/presence.js') }}?v=1"></script>
+    {% endif %}
+    <script defer>
+document.addEventListener('DOMContentLoaded',function(){
+// Lazy load images
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){var img=e.target;if(img.dataset.src){img.src=img.dataset.src;delete img.dataset.src;io.unobserve(img)}}})},{rootMargin:'200px'});
+  document.querySelectorAll('img[data-src]').forEach(function(img){io.observe(img)});
+}
+
+});
+    </script>
+    {% endblock %}
+</body>
+</html>

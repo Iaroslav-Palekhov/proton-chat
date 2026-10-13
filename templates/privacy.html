@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}Приватность - Мессенджер{% endblock %}
+
+{% block content %}
+<style>
+    .app-container, .sidebar, .main-content { display: none; }
+
+    .security-page {
+        min-height: 100vh;
+        background: var(--bg-primary);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+    }
+
+    .security-card {
+        background: var(--bg-secondary);
+        width: 100%;
+        max-width: 560px;
+        min-height: 100vh;
+    }
+
+    .security-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+    }
+
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: background 0.2s;
+    }
+    .back-btn:hover { background: var(--bg-tertiary); }
+
+    .security-header h1 {
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .section {
+        padding: 24px 16px 0;
+    }
+
+    .section-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 10px;
+        padding: 0 4px;
+    }
+
+    .section-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        padding: 0 4px;
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
+
+    .options-list {
+        background: var(--bg-tertiary);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .option-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.15s;
+        position: relative;
+    }
+
+    .option-item:last-child { border-bottom: none; }
+    .option-item:hover { background: var(--bg-hover, rgba(255,255,255,0.05)); }
+    .option-item.active { background: var(--bg-hover, rgba(255,255,255,0.05)); }
+
+    .option-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .icon-green  { background: rgba(34, 197, 94, 0.15);  color: #4ade80; }
+    .icon-blue   { background: rgba(59, 130, 246, 0.15);  color: #60a5fa; }
+    .icon-red    { background: rgba(239, 68, 68, 0.15);   color: #f87171; }
+    .icon-orange { background: rgba(249, 115, 22, 0.15);  color: #fb923c; }
+    .icon-purple { background: rgba(139, 92, 246, 0.15);  color: #a78bfa; }
+    .icon-gray   { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+
+    .option-text { flex: 1; min-width: 0; }
+
+    .option-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+
+    .option-desc {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .option-check {
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+        color: var(--accent);
+        opacity: 0;
+        transition: opacity 0.15s;
+    }
+
+    .option-item.active .option-check { opacity: 1; }
+
+    /* Toast */
+    .toast {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 500;
+        padding: 12px 22px;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s, transform 0.25s;
+        z-index: 999;
+        white-space: nowrap;
+    }
+    .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 560px) {
+        .security-card { max-width: 100%; }
+    }
+</style>
+
+<div class="security-page">
+<div class="security-card">
+
+    <div class="security-header">
+        <a href="{{ url_for('security') }}" class="back-btn js-back" title="Назад">
+            <svg width="22" height="22" viewBox="0 0 24 24" class="ico">
+                <use xlink:href="#icon-back"></use>
+            </svg>
+        </a>
+        <h1>Приватность</h1>
+    </div>
+
+    <!-- Кто может писать мне -->
+    <div class="section" style="margin-top: 8px;">
+        <div class="section-title">Кто может писать мне</div>
+        <div class="section-desc">
+            Если выбрано «Только контакты» — начать переписку с вами смогут лишь те, кто есть в ваших контактах. Вы сами можете написать любому, но это не добавит его в контакты.
+        </div>
+        <div class="options-list" id="who-can-write">
+
+            <div class="option-item {% if privacy.who_can_write == 'all' %}active{% endif %}"
+                 data-group="who_can_write" data-value="all" onclick="selectOption(this)">
+                <div class="option-icon icon-green">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div class="option-text">
+                    <div class="option-title">Все</div>
+                    <div class="option-desc">Любой пользователь может написать вам</div>
+                </div>
+                <svg class="option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+
+            <div class="option-item {% if privacy.who_can_write == 'contacts' %}active{% endif %}"
+                 data-group="who_can_write" data-value="contacts" onclick="selectOption(this)">
+                <div class="option-icon icon-blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div class="option-text">
+                    <div class="option-title">Только контакты</div>
+                    <div class="option-desc">Только люди из вашего списка контактов</div>
+                </div>
+                <svg class="option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Кто видит время захода -->
+    <div class="section" style="margin-top: 28px; padding-bottom: 40px;">
+        <div class="section-title">Кто видит время захода</div>
+        <div class="section-desc">
+            При «Только контакты» — контакты видят точное время вашего последнего визита и статус онлайн. При «Никто» — все видят лишь «онлайн» или «был(а) недавно», без точного времени.
+        </div>
+        <div class="options-list" id="last-seen">
+
+            <div class="option-item {% if privacy.last_seen == 'all' %}active{% endif %}"
+                 data-group="last_seen" data-value="all" onclick="selectOption(this)">
+                <div class="option-icon icon-green">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </div>
+                <div class="option-text">
+                    <div class="option-title">Все</div>
+                    <div class="option-desc">Все видят точное время вашего захода</div>
+                </div>
+                <svg class="option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+
+            <div class="option-item {% if privacy.last_seen == 'contacts' %}active{% endif %}"
+                 data-group="last_seen" data-value="contacts" onclick="selectOption(this)">
+                <div class="option-icon icon-blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div class="option-text">
+                    <div class="option-title">Только контакты</div>
+                    <div class="option-desc">Контакты видят онлайн и последний визит</div>
+                </div>
+                <svg class="option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+
+            <div class="option-item {% if privacy.last_seen == 'nobody' %}active{% endif %}"
+                 data-group="last_seen" data-value="nobody" onclick="selectOption(this)">
+                <div class="option-icon icon-gray">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                </div>
+                <div class="option-text">
+                    <div class="option-title">Никто</div>
+                    <div class="option-desc">Все видят только «онлайн» или «был(а) недавно»</div>
+                </div>
+                <svg class="option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function selectOption(el) {
+    const group = el.dataset.group;
+    const value = el.dataset.value;
+
+    // Снимаем active со всех в группе
+    document.querySelectorAll(`[data-group="${group}"]`).forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+
+    // Сохраняем на сервере
+    fetch('/security/privacy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ setting: group, value: value })
+    })
+    .then(r => r.json())
+    .then(data => {
+        showToast(data.ok ? 'Настройки сохранены' : (data.error || 'Ошибка'));
+    })
+    .catch(() => showToast('Ошибка сети'));
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+}
+</script>
+{% endblock %}
