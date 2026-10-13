@@ -1,6 +1,6 @@
 # Proton Messenger
 
-![Version](https://img.shields.io/badge/version-1.2.9-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-2.3+-green.svg)
 ![Python](https://img.shields.io/badge/Python-3.9+-yellow.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13+-lightblue.svg)
